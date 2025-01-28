@@ -11,7 +11,7 @@ from ._shared.models import (
     PhoneNumberIdentifier,
     MicrosoftTeamsUserIdentifier,
     UnknownIdentifier,
-    CommunicationIdentifierKind
+    CommunicationIdentifierKind,
 )
 
 if TYPE_CHECKING:
@@ -25,15 +25,18 @@ def serialize_identifier(identifier):
     :param identifier: Identifier object
     :type identifier: CommunicationIdentifier
     :return: CommunicationIdentifierModel
+    :rtype: ~azure.communication.chat._generated.models.CommunicationIdentifierModel
     """
     try:
-        request_model = {'raw_id': identifier.raw_id}
+        request_model = {"raw_id": identifier.raw_id}
 
         if identifier.kind and identifier.kind != CommunicationIdentifierKind.UNKNOWN:
             request_model[identifier.kind] = dict(identifier.properties)
         return request_model
     except AttributeError:
-        raise TypeError("Unsupported identifier type " + identifier.__class__.__name__)
+        raise TypeError(  # pylint: disable=raise-missing-from
+            "Unsupported identifier type " + identifier.__class__.__name__
+        )
 
 
 def deserialize_identifier(identifier_model):
@@ -44,6 +47,7 @@ def deserialize_identifier(identifier_model):
     :param identifier_model: CommunicationIdentifierModel
     :type identifier_model: CommunicationIdentifierModel
     :return: CommunicationIdentifier
+    :rtype: ~azure.communication.chat.CommunicationIdentifier
     """
     raw_id = identifier_model.raw_id
 
@@ -56,6 +60,6 @@ def deserialize_identifier(identifier_model):
             raw_id=raw_id,
             user_id=identifier_model.microsoft_teams_user.user_id,
             is_anonymous=identifier_model.microsoft_teams_user.is_anonymous,
-            cloud=identifier_model.microsoft_teams_user.cloud
+            cloud=identifier_model.microsoft_teams_user.cloud,
         )
     return UnknownIdentifier(raw_id)

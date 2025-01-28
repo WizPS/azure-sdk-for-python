@@ -16,7 +16,7 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
 
 setup(
     name='azure-keyvault',
-    version='4.2.0',
+    version='4.2.1b1',
     description='Microsoft Azure Key Vault Client Libraries for Python',
     long_description=README + "\n\n" + CHANGELOG,
     long_description_content_type="text/markdown",
@@ -24,16 +24,17 @@ setup(
     author='Microsoft Corporation',
     author_email="azurekeyvault@microsoft.com",
     url="https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/keyvault/azure-keyvault",
+    keywords="azure, azure sdk",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         'Programming Language :: Python',
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'License :: OSI Approved :: MIT License',
     ],
     zip_safe=False,

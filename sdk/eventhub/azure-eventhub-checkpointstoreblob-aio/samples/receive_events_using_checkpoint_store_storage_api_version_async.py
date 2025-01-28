@@ -11,7 +11,7 @@ SDK than those typically available on Azure. For example, if you are running Eve
 2002, the highest available version for the Storage service is version 2017-11-09. In this case, you will need to
 specify param api_version to 2017-11-09 when creating the BlobCheckpointStore. For more information on the Azure Storage
 service versions supported on Azure Stack Hub, please refer to
-<a href=docs.microsoft.com/azure-stack/user/azure-stack-acs-differences>Azure Stack Hub Documentation</a>
+<a href=learn.microsoft.com/azure-stack/user/azure-stack-acs-differences>Azure Stack Hub Documentation</a>
 """
 
 import asyncio
@@ -38,7 +38,6 @@ async def main(client):
         await client.receive(on_event)
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
     checkpoint_store = BlobCheckpointStore.from_connection_string(
         STORAGE_CONNECTION_STR,
         container_name=BLOB_CONTAINER_NAME,
@@ -50,7 +49,4 @@ if __name__ == '__main__':
         eventhub_name=EVENTHUB_NAME,
         checkpoint_store=checkpoint_store
     )
-    try:
-        loop.run_until_complete(main(client))
-    finally:
-        loop.stop()
+    asyncio.run(main(client))

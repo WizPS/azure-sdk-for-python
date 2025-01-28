@@ -2,36 +2,69 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from azure.ai.ml._restclient.v2022_05_01 import models
-from azure.ai.ml._restclient.v2022_02_01_preview import models as models_preview
-from azure.ai.ml.entities._datastore.credentials import (
-    AccountKeyCredentials,
-    SasTokenCredentials,
-    ServicePrincipalCredentials,
-    CertificateCredentials,
-    NoneCredentials,
+# pylint: disable=protected-access
+
+from typing import Any, Optional, Union, cast
+
+from azure.ai.ml._restclient.v2023_04_01_preview import models
+from azure.ai.ml._restclient.v2024_07_01_preview import models as models2024
+from azure.ai.ml.entities._credentials import (
+    AccountKeyConfiguration,
+    CertificateConfiguration,
+    NoneCredentialConfiguration,
+    SasTokenConfiguration,
+    ServicePrincipalConfiguration,
 )
-from azure.ai.ml.entities._datastore._on_prem_credentials import (
-    KerberosKeytabCredentials,
-    KerberosPasswordCredentials,
-)
+from azure.ai.ml.entities._datastore._on_prem_credentials import KerberosKeytabCredentials, KerberosPasswordCredentials
 
 
-def from_rest_datastore_credentials(rest_credentials: models.DatastoreCredentials):
-    if isinstance(rest_credentials, models.AccountKeyDatastoreCredentials):
-        return AccountKeyCredentials._from_rest_object(rest_credentials)
-    elif isinstance(rest_credentials, models.SasDatastoreCredentials):
-        return SasTokenCredentials._from_rest_object(rest_credentials)
-    elif isinstance(rest_credentials, models.ServicePrincipalDatastoreCredentials):
-        return ServicePrincipalCredentials._from_rest_object(rest_credentials)
-    elif isinstance(rest_credentials, models.CertificateDatastoreCredentials):
-        return CertificateCredentials._from_rest_object(rest_credentials)
-    elif isinstance(rest_credentials, models.NoneDatastoreCredentials):
-        return NoneCredentials._from_rest_object(rest_credentials)
+def from_rest_datastore_credentials(
+    rest_credentials: models.DatastoreCredentials,
+) -> Union[
+    AccountKeyConfiguration,
+    SasTokenConfiguration,
+    ServicePrincipalConfiguration,
+    CertificateConfiguration,
+    NoneCredentialConfiguration,
+]:
+    config_class: Any = NoneCredentialConfiguration
+
+    if isinstance(rest_credentials, (models.AccountKeyDatastoreCredentials, models2024.AccountKeyDatastoreCredentials)):
+        # we are no more using key for key base account.
+        # https://github.com/Azure/azure-sdk-for-python/pull/35716
+        if isinstance(rest_credentials.secrets, models2024.SasDatastoreSecrets):
+            config_class = SasTokenConfiguration
+        else:
+            config_class = AccountKeyConfiguration
+    elif isinstance(rest_credentials, (models.SasDatastoreCredentials, models2024.SasDatastoreCredentials)):
+        config_class = SasTokenConfiguration
+    elif isinstance(
+        rest_credentials, (models.ServicePrincipalDatastoreCredentials, models2024.ServicePrincipalDatastoreCredentials)
+    ):
+        config_class = ServicePrincipalConfiguration
+    elif isinstance(
+        rest_credentials, (models.CertificateDatastoreCredentials, models2024.CertificateDatastoreCredentials)
+    ):
+        config_class = CertificateConfiguration
+
+    return cast(
+        Union[
+            AccountKeyConfiguration,
+            SasTokenConfiguration,
+            ServicePrincipalConfiguration,
+            CertificateConfiguration,
+            NoneCredentialConfiguration,
+        ],
+        config_class._from_datastore_rest_object(rest_credentials),
+    )
 
 
-def _from_rest_datastore_credentials_preview(rest_credentials: models_preview.DatastoreCredentials):
-    if isinstance(rest_credentials, models_preview.KerberosKeytabCredentials):
+def _from_rest_datastore_credentials_preview(
+    rest_credentials: models.DatastoreCredentials,
+) -> Optional[Union[KerberosKeytabCredentials, KerberosPasswordCredentials]]:
+    if isinstance(rest_credentials, models.KerberosKeytabCredentials):
         return KerberosKeytabCredentials._from_rest_object(rest_credentials)
-    elif isinstance(rest_credentials, models_preview.KerberosPasswordCredentials):
+    if isinstance(rest_credentials, models.KerberosPasswordCredentials):
         return KerberosPasswordCredentials._from_rest_object(rest_credentials)
+
+    return None

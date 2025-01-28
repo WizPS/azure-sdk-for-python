@@ -2,8 +2,6 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 # ------------------------------------
-from __future__ import print_function
-
 import os
 import time
 
@@ -23,6 +21,7 @@ def print(*args):
     assert all(arg is not None for arg in args)
 
 
+@pytest.mark.playback_test_only("Can't run in live pipelines, and there's no reason to.")
 def test_create_key_client():
     vault_url = "vault_url"
     # pylint:disable=unused-variable
@@ -42,7 +41,7 @@ class TestExamplesKeyVault(KeyVaultTestCase, KeysTestCase):
     @recorded_by_proxy
     def test_example_key_crud_operations(self, key_client, **kwargs):
         if (self.is_live and os.environ["KEYVAULT_SKU"] != "premium"):
-            pytest.skip("This test not supprot in usgov/china region. Follow up with service team")
+            pytest.skip("This test is not supported on standard SKU vaults. Follow up with service team")
 
         key_name = self.get_resource_name("key-name")
 
@@ -151,10 +150,10 @@ class TestExamplesKeyVault(KeyVaultTestCase, KeysTestCase):
     @recorded_by_proxy
     def test_example_key_list_operations(self, key_client, **kwargs):
         for i in range(4):
-            key_name = self.get_resource_name("key{}".format(i))
+            key_name = self.get_resource_name(f"key{i}")
             key_client.create_ec_key(key_name)
         for i in range(4):
-            key_name = self.get_resource_name("key{}".format(i))
+            key_name = self.get_resource_name(f"key{i}")
             key_client.create_rsa_key(key_name)
 
         # [START list_keys]

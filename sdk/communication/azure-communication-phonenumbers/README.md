@@ -7,11 +7,11 @@ Azure Communication Phone Numbers client package is used to administer Phone Num
 _Azure SDK Python packages support for Python 2.7 has ended 01 January 2022. For more information and questions, please refer to https://github.com/Azure/azure-sdk-for-python/issues/20691_
 
 # Getting started
-### Prerequisites
-- Python 3.6 or later is required to use this package.
+## Prerequisites
+- Python 3.7 or later is required to use this package.
 - You must have an [Azure subscription](https://azure.microsoft.com/free/)
-- A deployed Communication Services resource. You can use the [Azure Portal](https://docs.microsoft.com/azure/communication-services/quickstarts/create-communication-resource?tabs=windows&pivots=platform-azp) or the [Azure PowerShell](https://docs.microsoft.com/powershell/module/az.communication/new-azcommunicationservice) to set it up.
-### Install the package
+- A deployed Communication Services resource. You can use the [Azure Portal](https://learn.microsoft.com/azure/communication-services/quickstarts/create-communication-resource?tabs=windows&pivots=platform-azp) or the [Azure PowerShell](https://learn.microsoft.com/powershell/module/az.communication/new-azcommunicationservice) to set it up.
+## Install the package
 Install the Azure Communication Phone Numbers client library for Python with [pip](https://pypi.org/project/pip/):
 
 ```bash
@@ -89,7 +89,7 @@ Phone numbers can also be released using the release API.
 
 Direct routing feature allows connecting customer-provided telephony infrastructure to Azure Communication Resources. In order to setup routing configuration properly, customer needs to supply the SIP trunk configuration and SIP routing rules for calls. SIP routing client provides the necessary interface for setting this configuration.
 
-When the call arrives, system tries to match the destination number with regex number patterns of defined routes. The first route to match the number will be selected. The order of regex matching is the same as the order of routes in configuration, therefore the order of routes matters.
+When a call is made, system tries to match the destination number with regex number patterns of defined routes. The first route to match the number will be selected. The order of regex matching is the same as the order of routes in configuration, therefore the order of routes matters.
 Once a route is matched, the call is routed to the first trunk in the route's trunks list. If the trunk is not available, next trunk in the list is selected.
 
 ## Examples
@@ -158,7 +158,7 @@ purchase_poller = phone_numbers_client.begin_purchase_phone_numbers(
 Releases an acquired phone number.
 
 ```python
-poller = self.phone_number_client.begin_release_phone_number(
+poller = phone_numbers_client.begin_release_phone_number(
     "<phone number>",
     polling = True
 )
@@ -174,7 +174,7 @@ Updates the specified phone number capabilities for Calling and SMS to one of:
 - `PhoneNumberCapabilityType.INBOUND_OUTBOUND`
 
 ```python
-poller = self.phone_number_client.begin_update_phone_number_capabilities(
+poller = phone_numbers_client.begin_update_phone_number_capabilities(
     "<phone number>",
     PhoneNumberCapabilityType.OUTBOUND,
     PhoneNumberCapabilityType.INBOUND_OUTBOUND,
@@ -189,11 +189,11 @@ poller = self.phone_number_client.begin_update_phone_number_capabilities(
 Get the list of currently configured trunks or routes.
 
 ```python
-trunks = sip_routing_client.get_trunks()
+trunks = sip_routing_client.list_trunks()
 for trunk in trunks:
     print(trunk.fqdn)
     print(trunk.sip_signaling_port)
-routes = sip_routing_client.get_routes()
+routes = sip_routing_client.list_routes()
 for route in routes:
     print(route.name)
     print(route.description)

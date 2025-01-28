@@ -25,11 +25,9 @@ USAGE:
 """
 
 
-import os
-
-
-def sample_recognize_custom_entities():
+def sample_recognize_custom_entities() -> None:
     # [START recognize_custom_entities]
+    import os
     from azure.core.credentials import AzureKeyCredential
     from azure.ai.textanalytics import TextAnalyticsClient
 
@@ -61,17 +59,16 @@ def sample_recognize_custom_entities():
 
     document_results = poller.result()
     for custom_entities_result in document_results:
-        if not custom_entities_result.is_error:
+        if custom_entities_result.kind == "CustomEntityRecognition":
             for entity in custom_entities_result.entities:
                 print(
                     "Entity '{}' has category '{}' with confidence score of '{}'".format(
                         entity.text, entity.category, entity.confidence_score
                     )
                 )
-        else:
-            print(
-                "...Is an error with code '{}' and message '{}'".format(
-                    custom_entities_result.code, custom_entities_result.message
+        elif custom_entities_result.is_error is True:
+            print("...Is an error with code '{}' and message '{}'".format(
+                custom_entities_result.error.code, custom_entities_result.error.message
                 )
             )
     # [END recognize_custom_entities]

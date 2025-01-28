@@ -43,8 +43,9 @@ setup(
     author='Microsoft Corporation',
     author_email='adupmdevteam@microsoft.com',
     url='https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/deviceupdate/azure-iot-deviceupdate',
+    keywords="azure, azure sdk",
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3",

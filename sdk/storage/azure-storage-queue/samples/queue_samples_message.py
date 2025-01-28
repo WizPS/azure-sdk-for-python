@@ -25,6 +25,7 @@ USAGE:
 
 from datetime import datetime, timedelta
 import os
+import sys
 
 
 class QueueMessageSamples(object):
@@ -32,16 +33,24 @@ class QueueMessageSamples(object):
     connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 
     def set_access_policy(self):
+        if self.connection_string is None:
+            print("Missing required environment variable: connection_string")
+            sys.exit(1)
+
         # [START create_queue_client_from_connection_string]
         from azure.storage.queue import QueueClient
         queue = QueueClient.from_connection_string(self.connection_string, "myqueue1")
+        if queue.account_name is None:
+            print("Connection string did not provide an account name." + '\n' +
+                  "Test: set_access_policy")
+            sys.exit(1)
         # [END create_queue_client_from_connection_string]
 
         # Create the queue
         queue.create_queue()
 
         # Send a message
-        queue.send_message(u"hello world")
+        queue.send_message("hello world")
 
         try:
             # [START set_access_policy]
@@ -84,6 +93,10 @@ class QueueMessageSamples(object):
             queue.delete_queue()
 
     def queue_metadata(self):
+        if self.connection_string is None:
+            print("Missing required environment variable: connection_string")
+            sys.exit(1)
+
         # Instantiate a queue client
         from azure.storage.queue import QueueClient
         queue = QueueClient.from_connection_string(self.connection_string, "myqueue2")
@@ -106,6 +119,10 @@ class QueueMessageSamples(object):
             queue.delete_queue()
 
     def send_and_receive_messages(self):
+        if self.connection_string is None:
+            print("Missing required environment variable: connection_string")
+            sys.exit(1)
+
         # Instantiate a queue client
         from azure.storage.queue import QueueClient
         queue = QueueClient.from_connection_string(self.connection_string, "myqueue3")
@@ -115,11 +132,11 @@ class QueueMessageSamples(object):
 
         try:
             # [START send_messages]
-            queue.send_message(u"message1")
-            queue.send_message(u"message2", visibility_timeout=30)  # wait 30s before becoming visible
-            queue.send_message(u"message3")
-            queue.send_message(u"message4")
-            queue.send_message(u"message5")
+            queue.send_message("message1")
+            queue.send_message("message2", visibility_timeout=30)  # wait 30s before becoming visible
+            queue.send_message("message3")
+            queue.send_message("message4")
+            queue.send_message("message5")
             # [END send_messages]
 
             # [START receive_messages]
@@ -147,6 +164,10 @@ class QueueMessageSamples(object):
             queue.delete_queue()
 
     def list_message_pages(self):
+        if self.connection_string is None:
+            print("Missing required environment variable: connection_string")
+            sys.exit(1)
+
         # Instantiate a queue client
         from azure.storage.queue import QueueClient
         queue = QueueClient.from_connection_string(self.connection_string, "myqueue4")
@@ -155,12 +176,12 @@ class QueueMessageSamples(object):
         queue.create_queue()
 
         try:
-            queue.send_message(u"message1")
-            queue.send_message(u"message2")
-            queue.send_message(u"message3")
-            queue.send_message(u"message4")
-            queue.send_message(u"message5")
-            queue.send_message(u"message6")
+            queue.send_message("message1")
+            queue.send_message("message2")
+            queue.send_message("message3")
+            queue.send_message("message4")
+            queue.send_message("message5")
+            queue.send_message("message6")
 
             # [START receive_messages_listing]
             # Store two messages in each page
@@ -180,6 +201,10 @@ class QueueMessageSamples(object):
             queue.delete_queue()
 
     def receive_one_message_from_queue(self):
+        if self.connection_string is None:
+            print("Missing required environment variable: connection_string")
+            sys.exit(1)
+
         # Instantiate a queue client
         from azure.storage.queue import QueueClient
         queue = QueueClient.from_connection_string(self.connection_string, "myqueue5")
@@ -188,9 +213,9 @@ class QueueMessageSamples(object):
         queue.create_queue()
 
         try:
-            queue.send_message(u"message1")
-            queue.send_message(u"message2")
-            queue.send_message(u"message3")
+            queue.send_message("message1")
+            queue.send_message("message2")
+            queue.send_message("message3")
 
             # [START receive_one_message]
             # Pop two messages from the front of the queue
@@ -198,6 +223,9 @@ class QueueMessageSamples(object):
             message2 = queue.receive_message()
             # We should see message 3 if we peek
             message3 = queue.peek_messages()[0]
+
+            if not message1 or not message2 or not message3:
+                raise ValueError("One of the messages are None.")
 
             print(message1.content)
             print(message2.content)
@@ -208,6 +236,10 @@ class QueueMessageSamples(object):
             queue.delete_queue()
 
     def delete_and_clear_messages(self):
+        if self.connection_string is None:
+            print("Missing required environment variable: connection_string")
+            sys.exit(1)
+
         # Instantiate a queue client
         from azure.storage.queue import QueueClient
         queue = QueueClient.from_connection_string(self.connection_string, "myqueue6")
@@ -217,11 +249,11 @@ class QueueMessageSamples(object):
 
         try:
             # Send messages
-            queue.send_message(u"message1")
-            queue.send_message(u"message2")
-            queue.send_message(u"message3")
-            queue.send_message(u"message4")
-            queue.send_message(u"message5")
+            queue.send_message("message1")
+            queue.send_message("message2")
+            queue.send_message("message3")
+            queue.send_message("message4")
+            queue.send_message("message5")
 
             # [START delete_message]
             # Get the message at the front of the queue
@@ -240,6 +272,10 @@ class QueueMessageSamples(object):
             queue.delete_queue()
 
     def peek_messages(self):
+        if self.connection_string is None:
+            print("Missing required environment variable: connection_string")
+            sys.exit(1)
+
         # Instantiate a queue client
         from azure.storage.queue import QueueClient
         queue = QueueClient.from_connection_string(self.connection_string, "myqueue7")
@@ -249,11 +285,11 @@ class QueueMessageSamples(object):
 
         try:
             # Send messages
-            queue.send_message(u"message1")
-            queue.send_message(u"message2")
-            queue.send_message(u"message3")
-            queue.send_message(u"message4")
-            queue.send_message(u"message5")
+            queue.send_message("message1")
+            queue.send_message("message2")
+            queue.send_message("message3")
+            queue.send_message("message4")
+            queue.send_message("message5")
 
             # [START peek_message]
             # Peek at one message at the front of the queue
@@ -272,6 +308,10 @@ class QueueMessageSamples(object):
             queue.delete_queue()
 
     def update_message(self):
+        if self.connection_string is None:
+            print("Missing required environment variable: connection_string")
+            sys.exit(1)
+
         # Instantiate a queue client
         from azure.storage.queue import QueueClient
         queue = QueueClient.from_connection_string(self.connection_string, "myqueue8")
@@ -282,7 +322,7 @@ class QueueMessageSamples(object):
         try:
             # [START update_message]
             # Send a message
-            queue.send_message(u"update me")
+            queue.send_message("update me")
 
             # Receive the message
             messages = queue.receive_messages()
@@ -293,7 +333,7 @@ class QueueMessageSamples(object):
                 list_result.id,
                 pop_receipt=list_result.pop_receipt,
                 visibility_timeout=0,
-                content=u"updated")
+                content="updated")
             # [END update_message]
 
         finally:
@@ -301,6 +341,10 @@ class QueueMessageSamples(object):
             queue.delete_queue()
 
     def receive_messages_with_max_messages(self):
+        if self.connection_string is None:
+            print("Missing required environment variable: connection_string")
+            sys.exit(1)
+
         # Instantiate a queue client
         from azure.storage.queue import QueueClient
         queue = QueueClient.from_connection_string(self.connection_string, "myqueue9")
@@ -309,16 +353,16 @@ class QueueMessageSamples(object):
         queue.create_queue()
 
         try:
-            queue.send_message(u"message1")
-            queue.send_message(u"message2")
-            queue.send_message(u"message3")
-            queue.send_message(u"message4")
-            queue.send_message(u"message5")
-            queue.send_message(u"message6")
-            queue.send_message(u"message7")
-            queue.send_message(u"message8")
-            queue.send_message(u"message9")
-            queue.send_message(u"message10")
+            queue.send_message("message1")
+            queue.send_message("message2")
+            queue.send_message("message3")
+            queue.send_message("message4")
+            queue.send_message("message5")
+            queue.send_message("message6")
+            queue.send_message("message7")
+            queue.send_message("message8")
+            queue.send_message("message9")
+            queue.send_message("message10")
 
             # Receive messages one-by-one
             messages = queue.receive_messages(max_messages=5)

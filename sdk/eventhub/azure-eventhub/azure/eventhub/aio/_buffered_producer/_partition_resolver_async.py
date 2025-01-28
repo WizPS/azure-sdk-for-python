@@ -9,7 +9,7 @@ jenkins-hash lookup3 algorithm implementation
 from asyncio import Lock
 from ..._buffered_producer._partition_resolver import (
     generate_hash_code,
-)  # pylint: disable=protected-access
+)
 
 
 class PartitionResolver:
@@ -22,6 +22,9 @@ class PartitionResolver:
     async def get_next_partition_id(self):
         """
         round-robin partition assignment
+
+        :return: The next partition id.
+        :rtype: str
         """
         async with self._lock:
             self._idx += 1

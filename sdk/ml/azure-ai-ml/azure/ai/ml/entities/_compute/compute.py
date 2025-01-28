@@ -1,93 +1,99 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from abc import abstractclassmethod
+
+# pylint: disable=protected-access
+
+from abc import abstractmethod
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import IO, Any, AnyStr, Dict, Optional, Union, cast
 
-from azure.ai.ml._restclient.v2022_01_01_preview.models import ComputeResource
-from azure.ai.ml._utils.utils import dump_yaml_to_file, load_yaml
+from azure.ai.ml._restclient.v2022_10_01_preview.models import ComputeResource
 from azure.ai.ml._schema.compute.compute import ComputeSchema
-from azure.ai.ml.constants import (
-    BASE_PATH_CONTEXT_KEY,
-    PARAMS_OVERRIDE_KEY,
-    ComputeType,
-    CommonYamlFields,
-)
-from azure.ai.ml.entities import Resource
+from azure.ai.ml._utils.utils import dump_yaml_to_file
+from azure.ai.ml.constants._common import BASE_PATH_CONTEXT_KEY, PARAMS_OVERRIDE_KEY, CommonYamlFields
+from azure.ai.ml.constants._compute import ComputeType
 from azure.ai.ml.entities._mixins import RestTranslatableMixin
+from azure.ai.ml.entities._resource import Resource
 from azure.ai.ml.entities._util import find_type_in_override
-from azure.ai.ml._ml_exceptions import ValidationException, ErrorCategory, ErrorTarget
+from azure.ai.ml.exceptions import ErrorCategory, ErrorTarget, ValidationException
 
 
 class Compute(Resource, RestTranslatableMixin):
-    """Compute resource
+    """Base class for compute resources.
 
-    :param type: The type of the compute, possible values are ["amlcompute", "computeinstance", "virtualmachine", "kubernetes"]
+    This class should not be instantiated directly. Instead, use one of its subclasses.
+
+    :param type: The compute type. Accepted values are "amlcompute", "computeinstance",
+        "virtualmachine", "kubernetes", and "synapsespark".
     :type type: str
-    :param name: Name of the compute
+    :param name: Name of the compute resource.
     :type name: str
-    :param location: The resource location, defaults to None
-    :type location: Optional[str], optional
-    :param description: Description of the resource.
-    :type description: Optional[str], optional
-    :param resource_id: ARM resource id of the underlying compute.
-    :type resource_id: str, optional
+    :param location: The resource location. Defaults to workspace location.
+    :type location: Optional[str]
+    :param description: Description of the resource. Defaults to None.
+    :type description: Optional[str]
+    :param resource_id: ARM resource id of the underlying compute. Defaults to None.
+    :type resource_id: Optional[str]
+    :param tags: A set of tags. Contains resource tags defined as key/value pairs.
+    :type tags: Optional[dict[str, str]]
     """
 
     def __init__(
         self,
         name: str,
         location: Optional[str] = None,
-        description: str = None,
-        resource_id: str = None,
-        **kwargs,
-    ):
-        self._type = kwargs.pop("type", None)
+        description: Optional[str] = None,
+        resource_id: Optional[str] = None,
+        tags: Optional[Dict] = None,
+        **kwargs: Any,
+    ) -> None:
+        self._type: Optional[str] = kwargs.pop("type", None)
         if self._type:
             self._type = self._type.lower()
 
-        self._created_on = kwargs.pop("created_on", None)
-        self._provisioning_state = kwargs.pop("provisioning_state", None)
-        self._provisioning_errors = kwargs.pop("provisioning_errors", None)
+        self._created_on: Optional[str] = kwargs.pop("created_on", None)
+        self._provisioning_state: Optional[str] = kwargs.pop("provisioning_state", None)
+        self._provisioning_errors: Optional[str] = kwargs.pop("provisioning_errors", None)
 
         super().__init__(name=name, description=description, **kwargs)
         self.resource_id = resource_id
         self.location = location
+        self.tags = tags
 
     @property
     def type(self) -> Optional[str]:
-        """The type of the compute, possible values are ["amlcompute", "computeinstance", "virtualmachine", "kubernetes"]
+        """The compute type.
 
-        :return: The type of the compute
+        :return: The compute type.
         :rtype: Optional[str]
         """
         return self._type
 
     @property
     def created_on(self) -> Optional[str]:
-        """Creation timestamp
+        """The compute resource creation timestamp.
 
-        :return: [description]
+        :return: The compute resource creation timestamp.
         :rtype: Optional[str]
         """
         return self._created_on
 
     @property
     def provisioning_state(self) -> Optional[str]:
-        """Provisioning state
+        """The compute resource's provisioning state.
 
-        :return: [description]
+        :return: The compute resource's provisioning state.
         :rtype: Optional[str]
         """
         return self._provisioning_state
 
     @property
     def provisioning_errors(self) -> Optional[str]:
-        """Provisioning errors
+        """The compute resource provisioning errors.
 
-        :return: [description]
+        :return: The compute resource provisioning errors.
         :rtype: Optional[str]
         """
         return self._provisioning_errors
@@ -96,13 +102,14 @@ class Compute(Resource, RestTranslatableMixin):
         pass
 
     @classmethod
-    def _from_rest_object(cls, rest_obj: ComputeResource) -> "Compute":
+    def _from_rest_object(cls, obj: ComputeResource) -> "Compute":
         from azure.ai.ml.entities import (
-            VirtualMachineCompute,
             AmlCompute,
             ComputeInstance,
-            UnsupportedCompute,
             KubernetesCompute,
+            SynapseSparkCompute,
+            UnsupportedCompute,
+            VirtualMachineCompute,
         )
 
         mapping = {
@@ -110,42 +117,53 @@ class Compute(Resource, RestTranslatableMixin):
             ComputeType.COMPUTEINSTANCE.lower(): ComputeInstance,
             ComputeType.VIRTUALMACHINE.lower(): VirtualMachineCompute,
             ComputeType.KUBERNETES.lower(): KubernetesCompute,
+            ComputeType.SYNAPSESPARK.lower(): SynapseSparkCompute,
         }
-        compute_type = rest_obj.properties.compute_type.lower() if rest_obj.properties.compute_type else None
+        compute_type = obj.properties.compute_type.lower() if obj.properties.compute_type else None
 
-        class_type = mapping.get(compute_type, None)
+        class_type = cast(
+            Optional[Union[AmlCompute, ComputeInstance, VirtualMachineCompute, KubernetesCompute, SynapseSparkCompute]],
+            mapping.get(compute_type, None),  # type: ignore
+        )
         if class_type:
-            return class_type._load_from_rest(rest_obj)
-        else:
-            return UnsupportedCompute._load_from_rest(rest_obj)
+            return class_type._load_from_rest(obj)
+        _unsupported_from_rest: Compute = UnsupportedCompute._load_from_rest(obj)
+        return _unsupported_from_rest
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def _load_from_rest(cls, rest_obj: ComputeResource) -> "Compute":
         pass
 
     def _set_full_subnet_name(self, subscription_id: str, rg: str) -> None:
         pass
 
-    def dump(self, path: Union[PathLike, str]) -> None:
+    def dump(self, dest: Union[str, PathLike, IO[AnyStr]], **kwargs: Any) -> None:
         """Dump the compute content into a file in yaml format.
 
-        :param path: Path to a local file as the target, new file will be created, raises exception if the file exists.
-        :type path: str
+        :param dest: The destination to receive this compute's content.
+            Must be either a path to a local file, or an already-open file stream.
+            If dest is a file path, a new file will be created,
+            and an exception is raised if the file exists.
+            If dest is an open file, the file will be written to directly,
+            and an exception will be raised if the file is not writable.'.
+        :type dest: Union[PathLike, str, IO[AnyStr]]
         """
-
+        path = kwargs.pop("path", None)
         yaml_serialized = self._to_dict()
-        dump_yaml_to_file(path, yaml_serialized, default_flow_style=False)
+        dump_yaml_to_file(dest, yaml_serialized, default_flow_style=False, path=path, **kwargs)
 
     def _to_dict(self) -> Dict:
-        return ComputeSchema(context={BASE_PATH_CONTEXT_KEY: "./"}).dump(self)
+        res: dict = ComputeSchema(context={BASE_PATH_CONTEXT_KEY: "./"}).dump(self)
+        return res
 
     @classmethod
     def _load(
         cls,
-        data: Dict = None,
-        yaml_path: Union[PathLike, str] = None,
-        params_override: list = None,
-        **kwargs,
+        data: Optional[Dict] = None,
+        yaml_path: Optional[Union[PathLike, str]] = None,
+        params_override: Optional[list] = None,
+        **kwargs: Any,
     ) -> "Compute":
         data = data or {}
         params_override = params_override or []
@@ -153,20 +171,33 @@ class Compute(Resource, RestTranslatableMixin):
             BASE_PATH_CONTEXT_KEY: Path(yaml_path).parent if yaml_path else Path("./"),
             PARAMS_OVERRIDE_KEY: params_override,
         }
-        from azure.ai.ml.entities import VirtualMachineCompute, AmlCompute, ComputeInstance, KubernetesCompute
+        from azure.ai.ml.entities import (
+            AmlCompute,
+            ComputeInstance,
+            KubernetesCompute,
+            SynapseSparkCompute,
+            VirtualMachineCompute,
+        )
 
         type_in_override = find_type_in_override(params_override) if params_override else None
-        type = type_in_override or data.get(CommonYamlFields.TYPE, None)  # override takes the priority
-        if type:
-            if type.lower() == ComputeType.VIRTUALMACHINE:
-                return VirtualMachineCompute._load_from_dict(data, context, **kwargs)
-            elif type.lower() == ComputeType.AMLCOMPUTE:
-                return AmlCompute._load_from_dict(data, context, **kwargs)
-            elif type.lower() == ComputeType.COMPUTEINSTANCE:
-                return ComputeInstance._load_from_dict(data, context, **kwargs)
-            elif type.lower() == ComputeType.KUBERNETES:
-                return KubernetesCompute._load_from_dict(data, context, **kwargs)
-        msg = f"Unknown compute type: {type}"
+        compute_type = type_in_override or data.get(CommonYamlFields.TYPE, None)  # override takes the priority
+        if compute_type:
+            if compute_type.lower() == ComputeType.VIRTUALMACHINE:
+                _vm_load_from_dict: Compute = VirtualMachineCompute._load_from_dict(data, context, **kwargs)
+                return _vm_load_from_dict
+            if compute_type.lower() == ComputeType.AMLCOMPUTE:
+                _aml_load_from_dict: Compute = AmlCompute._load_from_dict(data, context, **kwargs)
+                return _aml_load_from_dict
+            if compute_type.lower() == ComputeType.COMPUTEINSTANCE:
+                _compute_instance_load_from_dict: Compute = ComputeInstance._load_from_dict(data, context, **kwargs)
+                return _compute_instance_load_from_dict
+            if compute_type.lower() == ComputeType.KUBERNETES:
+                _kub_load_from_dict: Compute = KubernetesCompute._load_from_dict(data, context, **kwargs)
+                return _kub_load_from_dict
+            if compute_type.lower() == ComputeType.SYNAPSESPARK:
+                _synapse_spark_load_from_dict: Compute = SynapseSparkCompute._load_from_dict(data, context, **kwargs)
+                return _synapse_spark_load_from_dict
+        msg = f"Unknown compute type: {compute_type}"
         raise ValidationException(
             message=msg,
             target=ErrorTarget.COMPUTE,
@@ -174,37 +205,49 @@ class Compute(Resource, RestTranslatableMixin):
             error_category=ErrorCategory.USER_ERROR,
         )
 
-    @abstractclassmethod
-    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str, **kwargs) -> "Compute":
+    @classmethod
+    @abstractmethod
+    def _load_from_dict(cls, data: Dict, context: Dict, **kwargs: Any) -> "Compute":
         pass
 
 
 class NetworkSettings:
+    """Network settings for a compute resource. If the workspace and VNet are in different resource groups,
+    please provide the full URI for subnet and leave vnet_name as None.
+
+    :param vnet_name: The virtual network name.
+    :type vnet_name: Optional[str]
+    :param subnet: The subnet name.
+    :type subnet: Optional[str]
+
+    .. admonition:: Example:
+
+        .. literalinclude:: ../samples/ml_samples_compute.py
+            :start-after: [START network_settings]
+            :end-before: [END network_settings]
+            :language: python
+            :dedent: 8
+            :caption: Configuring NetworkSettings for an AmlCompute object.
+    """
+
     def __init__(
         self,
         *,
-        vnet_name: str = None,
-        subnet: str = None,
-        **kwargs,
-    ):
-        """Network settings for a compute
-
-        :param vnet_name: The virtual network name, defaults to None
-        :type vnet_name: str, optional
-        :param subnet: The subnet name, defaults to None
-        :type subnet: str, optional
-        """
+        vnet_name: Optional[str] = None,
+        subnet: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
         self.vnet_name = vnet_name
         self.subnet = subnet
-        self._public_ip_address = kwargs.pop("public_ip_address", None)
-        self._private_ip_address = kwargs.pop("private_ip_address", None)
+        self._public_ip_address: str = kwargs.pop("public_ip_address", None)
+        self._private_ip_address: str = kwargs.pop("private_ip_address", None)
 
     @property
     def public_ip_address(self) -> str:
         """Public IP address of the compute instance.
 
-        return: Public IP address.
-        rtype: str
+        :return: Public IP address.
+        :rtype: str
         """
         return self._public_ip_address
 
@@ -212,7 +255,7 @@ class NetworkSettings:
     def private_ip_address(self) -> str:
         """Private IP address of the compute instance.
 
-        return: Private IP address.
-        rtype: str
+        :return: Private IP address.
+        :rtype: str
         """
         return self._private_ip_address

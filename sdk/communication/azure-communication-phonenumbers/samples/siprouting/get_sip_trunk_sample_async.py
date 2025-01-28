@@ -24,12 +24,17 @@ from azure.communication.phonenumbers.siprouting.aio import SipRoutingClient
 connection_string = os.getenv("COMMUNICATION_SAMPLES_CONNECTION_STRING")
 client = SipRoutingClient.from_connection_string(connection_string)
 
+
 async def get_sip_trunk_sample():
     trunk_fqdn = os.getenv("COMMUNICATION_SAMPLES_TRUNK_FQDN")
-    async with client:
-        sip_trunk = await client.get_trunk(trunk_fqdn)
-    print(sip_trunk.fqdn)
-    print(sip_trunk.sip_signaling_port)
+    try:
+        async with client:
+            sip_trunk = await client.get_trunk(trunk_fqdn)
+        print(sip_trunk.fqdn)
+        print(sip_trunk.sip_signaling_port)
+    except KeyError:
+        print("Trunk not found")
+
 
 if __name__ == "__main__":
     asyncio.run(get_sip_trunk_sample())

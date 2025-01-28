@@ -21,15 +21,14 @@ USAGE:
     2) AZURE_LANGUAGE_KEY - your Language subscription key
 """
 
-import os
 
-
-def sample_extract_key_phrases():
+def sample_extract_key_phrases() -> None:
     print(
         "In this sample, we want to find the articles that mention Microsoft to read."
     )
     articles_that_mention_microsoft = []
     # [START extract_key_phrases]
+    import os
     from azure.core.credentials import AzureKeyCredential
     from azure.ai.textanalytics import TextAnalyticsClient
 

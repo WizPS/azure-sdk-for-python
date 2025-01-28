@@ -15,7 +15,7 @@ DESCRIPTION:
     2) Use a token credential from azure-identity to authenticate with Azure Active Directory
 
     See more details about authentication here:
-    https://docs.microsoft.com/azure/cognitive-services/authentication
+    https://learn.microsoft.com/azure/cognitive-services/authentication
 
 USAGE:
     python sample_authentication_async.py
@@ -28,13 +28,13 @@ USAGE:
     5) AZURE_CLIENT_SECRET - the secret of your active directory application.
 """
 
-import os
 import asyncio
 
 
-async def sample_authentication_with_api_key_credential_async():
+async def sample_authentication_with_api_key_credential_async() -> None:
     print("\n.. authentication_with_api_key_credential_async")
     # [START create_ta_client_with_key_async]
+    import os
     from azure.core.credentials import AzureKeyCredential
     from azure.ai.textanalytics.aio import TextAnalyticsClient
     endpoint = os.environ["AZURE_LANGUAGE_ENDPOINT"]
@@ -56,12 +56,13 @@ async def sample_authentication_with_api_key_credential_async():
     print(f"Confidence score: {result[0].primary_language.confidence_score}")
 
 
-async def sample_authentication_with_azure_active_directory_async():
+async def sample_authentication_with_azure_active_directory_async() -> None:
     """DefaultAzureCredential will use the values from these environment
     variables: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET
     """
     print("\n.. authentication_with_azure_active_directory_async")
     # [START create_ta_client_with_aad_async]
+    import os
     from azure.ai.textanalytics.aio import TextAnalyticsClient
     from azure.identity.aio import DefaultAzureCredential
 

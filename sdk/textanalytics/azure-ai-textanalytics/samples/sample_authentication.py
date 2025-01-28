@@ -15,7 +15,7 @@ DESCRIPTION:
     2) Use a token credential from azure-identity to authenticate with Azure Active Directory
 
     See more details about authentication here:
-    https://docs.microsoft.com/azure/cognitive-services/authentication
+    https://learn.microsoft.com/azure/cognitive-services/authentication
 
 USAGE:
     python sample_authentication.py
@@ -28,12 +28,11 @@ USAGE:
     5) AZURE_CLIENT_SECRET - the secret of your active directory application.
 """
 
-import os
 
-
-def sample_authentication_with_api_key_credential():
+def sample_authentication_with_api_key_credential() -> None:
     print("\n.. authentication_with_api_key_credential")
     # [START create_ta_client_with_key]
+    import os
     from azure.core.credentials import AzureKeyCredential
     from azure.ai.textanalytics import TextAnalyticsClient
     endpoint = os.environ["AZURE_LANGUAGE_ENDPOINT"]
@@ -53,12 +52,13 @@ def sample_authentication_with_api_key_credential():
     print(f"Language detected: {result[0].primary_language.name}")
     print(f"Confidence score: {result[0].primary_language.confidence_score}")
 
-def sample_authentication_with_azure_active_directory():
+def sample_authentication_with_azure_active_directory() -> None:
     """DefaultAzureCredential will use the values from these environment
     variables: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET
     """
     print("\n.. authentication_with_azure_active_directory")
     # [START create_ta_client_with_aad]
+    import os
     from azure.ai.textanalytics import TextAnalyticsClient
     from azure.identity import DefaultAzureCredential
 

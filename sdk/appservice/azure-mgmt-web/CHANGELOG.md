@@ -1,5 +1,94 @@
 # Release History
 
+## 8.0.0 (2025-01-23)
+
+### Breaking Changes
+  
+  - Removed subfolders of some unused Api-Versions for smaller package size. If your application requires a specific and non-latest Api-Version, it's recommended to pin this package to the previous released version; If your application always only use latest Api-Version, please ignore this change.
+
+## 7.3.1 (2024-08-19)
+
+### Bugs Fixed
+
+  - Fix type of property instance_count in model FunctionsAlwaysReadyConfig from float to int
+  - Fix type of property maximum_instance_count in model FunctionsScaleAndConcurrency from float to int
+  - Fix type of property instance_memory_mb in model FunctionsScaleAndConcurrency from float to int
+  - Fix type of property per_instance_concurrency in model FunctionsScaleAndConcurrencyTriggersHttp from float to int
+
+## 7.3.0 (2024-06-17)
+
+### Features Added
+
+  - Added operation WebAppsOperations.create_or_update_site_container
+  - Added operation WebAppsOperations.create_or_update_site_container_slot
+  - Added operation WebAppsOperations.delete_site_container
+  - Added operation WebAppsOperations.delete_site_container_slot
+  - Added operation WebAppsOperations.get_site_container
+  - Added operation WebAppsOperations.get_site_container_slot
+  - Added operation WebAppsOperations.list_site_containers
+  - Added operation WebAppsOperations.list_site_containers_slot
+  - Model AzureStorageInfoValue has a new parameter protocol
+  - Model Site has a new parameter dns_configuration
+  - Model Site has a new parameter function_app_config
+  - Model Site has a new parameter vnet_backup_restore_enabled
+  - Model SitePatchResource has a new parameter dns_configuration
+
+## 7.2.0 (2023-11-20)
+
+### Features Added
+
+  - Added operation WebSiteManagementClientOperationsMixin.list_ase_regions
+  - Added operation group GetUsagesInLocationOperations
+  - Model ResourceNameAvailabilityRequest has a new parameter environment_id
+  - Model Site has a new parameter dapr_config
+  - Model Site has a new parameter resource_config
+  - Model Site has a new parameter workload_profile_name
+  - Model SiteConfig has a new parameter min_tls_cipher_suite
+  - Model SiteConfigResource has a new parameter min_tls_cipher_suite
+  - Operation WebSiteManagementClientOperationsMixin.check_name_availability has a new optional parameter environment_id
+
+## 7.1.0 (2023-04-20)
+
+### Features Added
+
+  - Added operation StaticSitesOperations.create_or_update_basic_auth
+  - Added operation StaticSitesOperations.create_or_update_build_database_connection
+  - Added operation StaticSitesOperations.create_or_update_database_connection
+  - Added operation StaticSitesOperations.delete_build_database_connection
+  - Added operation StaticSitesOperations.delete_database_connection
+  - Added operation StaticSitesOperations.get_basic_auth
+  - Added operation StaticSitesOperations.get_build_database_connection
+  - Added operation StaticSitesOperations.get_build_database_connection_with_details
+  - Added operation StaticSitesOperations.get_build_database_connections
+  - Added operation StaticSitesOperations.get_build_database_connections_with_details
+  - Added operation StaticSitesOperations.get_database_connection
+  - Added operation StaticSitesOperations.get_database_connection_with_details
+  - Added operation StaticSitesOperations.get_database_connections
+  - Added operation StaticSitesOperations.get_database_connections_with_details
+  - Added operation StaticSitesOperations.list_basic_auth
+  - Added operation StaticSitesOperations.update_build_database_connection
+  - Added operation StaticSitesOperations.update_database_connection
+  - Added operation WebAppsOperations.deploy_workflow_artifacts
+  - Added operation WebAppsOperations.deploy_workflow_artifacts_slot
+  - Added operation WebAppsOperations.get_instance_workflow_slot
+  - Added operation WebAppsOperations.get_workflow
+  - Added operation WebAppsOperations.list_instance_workflows_slot
+  - Added operation WebAppsOperations.list_workflows
+  - Added operation WebAppsOperations.list_workflows_connections
+  - Added operation WebAppsOperations.list_workflows_connections_slot
+  - Model Site has a new parameter managed_environment_id
+  - Model SiteConfig has a new parameter elastic_web_app_scale_limit
+  - Model SiteConfig has a new parameter ip_security_restrictions_default_action
+  - Model SiteConfig has a new parameter metadata
+  - Model SiteConfig has a new parameter scm_ip_security_restrictions_default_action
+  - Model SiteConfigResource has a new parameter elastic_web_app_scale_limit
+  - Model SiteConfigResource has a new parameter ip_security_restrictions_default_action
+  - Model SiteConfigResource has a new parameter metadata
+  - Model SiteConfigResource has a new parameter scm_ip_security_restrictions_default_action
+  - Model StaticSiteARMResource has a new parameter database_connections
+  - Model StaticSiteBuildARMResource has a new parameter database_connections
+  - Model StaticSitePatchResource has a new parameter database_connections
+
 ## 7.0.0 (2022-07-04)
 
 **Features**

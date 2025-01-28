@@ -1,5 +1,8 @@
 # Release History
 
+## 1.0.0b5 (2024-04-17)
+
+ - This package is no longer being maintained. Use the [azure-purview-datamap](https://pypi.org/project/azure-purview-datamap/) package instead.
 
 ## 1.0.0b4 (2022-06-13)
 

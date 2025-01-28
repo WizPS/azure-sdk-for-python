@@ -56,7 +56,7 @@ def get_endpoint_by_location(locations):
 
 
 class LocationCache(object):  # pylint: disable=too-many-public-methods,too-many-instance-attributes
-    def current_time_millis(self):  # pylint: disable=no-self-use
+    def current_time_millis(self):
         return int(round(time.time() * 1000))
 
     def __init__(
@@ -159,15 +159,14 @@ class LocationCache(object):  # pylint: disable=too-many-public-methods,too-many
 
             should_refresh = self.use_multiple_write_locations and not self.enable_multiple_writable_locations
 
-            if most_preferred_location:
-                if self.available_read_endpoint_by_locations:
-                    most_preferred_read_endpoint = self.available_read_endpoint_by_locations[most_preferred_location]
-                    if most_preferred_read_endpoint and most_preferred_read_endpoint != self.read_endpoints[0]:
-                        # For reads, we can always refresh in background as we can alternate to
-                        # other available read endpoints
-                        return True
-                else:
+            if most_preferred_location and most_preferred_location in self.available_read_endpoint_by_locations:
+                most_preferred_read_endpoint = self.available_read_endpoint_by_locations[most_preferred_location]
+                if most_preferred_read_endpoint and most_preferred_read_endpoint != self.read_endpoints[0]:
+                    # For reads, we can always refresh in background as we can alternate to
+                    # other available read endpoints
                     return True
+            else:
+                return True
 
             if not self.can_use_multiple_write_locations():
                 if self.is_endpoint_unavailable(self.write_endpoints[0], EndpointOperationType.WriteType):
@@ -175,7 +174,7 @@ class LocationCache(object):  # pylint: disable=too-many-public-methods,too-many
                     # we have an alternate write endpoint
                     return True
                 return should_refresh
-            if most_preferred_location:
+            if most_preferred_location and most_preferred_location in self.available_write_endpoint_by_locations:
                 most_preferred_write_endpoint = self.available_write_endpoint_by_locations[most_preferred_location]
                 if most_preferred_write_endpoint:
                     should_refresh |= most_preferred_write_endpoint != self.write_endpoints[0]
@@ -187,7 +186,7 @@ class LocationCache(object):  # pylint: disable=too-many-public-methods,too-many
     def clear_stale_endpoint_unavailability_info(self):
         new_location_unavailability_info = {}
         if self.location_unavailability_info_by_endpoint:
-            for unavailable_endpoint in self.location_unavailability_info_by_endpoint:
+            for unavailable_endpoint in self.location_unavailability_info_by_endpoint:  #pylint: disable=consider-using-dict-items
                 unavailability_info = self.location_unavailability_info_by_endpoint[unavailable_endpoint]
                 if not (
                     unavailability_info
@@ -200,7 +199,7 @@ class LocationCache(object):  # pylint: disable=too-many-public-methods,too-many
 
         self.location_unavailability_info_by_endpoint = new_location_unavailability_info
 
-    def is_endpoint_unavailable(self, endpoint, expected_available_operations):
+    def is_endpoint_unavailable(self, endpoint: str, expected_available_operation: str):
         unavailability_info = (
             self.location_unavailability_info_by_endpoint[endpoint]
             if endpoint in self.location_unavailability_info_by_endpoint
@@ -208,9 +207,9 @@ class LocationCache(object):  # pylint: disable=too-many-public-methods,too-many
         )
 
         if (
-            expected_available_operations == EndpointOperationType.NoneType
+            expected_available_operation == EndpointOperationType.NoneType
             or not unavailability_info
-            or expected_available_operations not in unavailability_info["operationType"]
+            or expected_available_operation not in unavailability_info["operationType"]
         ):
             return False
 
@@ -223,19 +222,19 @@ class LocationCache(object):  # pylint: disable=too-many-public-methods,too-many
         return True
 
     def mark_endpoint_unavailable(self, unavailable_endpoint, unavailable_operation_type):
-        unavailablility_info = (
+        unavailability_info = (
             self.location_unavailability_info_by_endpoint[unavailable_endpoint]
             if unavailable_endpoint in self.location_unavailability_info_by_endpoint
             else None
         )
         current_time = self.current_time_millis()
-        if not unavailablility_info:
+        if not unavailability_info:
             self.location_unavailability_info_by_endpoint[unavailable_endpoint] = {
                 "lastUnavailabilityCheckTimeStamp": current_time,
                 "operationType": set([unavailable_operation_type]),
             }
         else:
-            unavailable_operations = set([unavailable_operation_type]).union(unavailablility_info["operationType"])
+            unavailable_operations = set([unavailable_operation_type]).union(unavailability_info["operationType"])
             self.location_unavailability_info_by_endpoint[unavailable_endpoint] = {
                 "lastUnavailabilityCheckTimeStamp": current_time,
                 "operationType": unavailable_operations,
@@ -319,7 +318,7 @@ class LocationCache(object):  # pylint: disable=too-many-public-methods,too-many
     def can_use_multiple_write_locations(self):
         return self.use_multiple_write_locations and self.enable_multiple_writable_locations
 
-    def can_use_multiple_write_locations_for_request(self, request):
+    def can_use_multiple_write_locations_for_request(self, request):  # pylint: disable=name-too-long
         return self.can_use_multiple_write_locations() and (
             request.resource_type == http_constants.ResourceType.Document
             or (

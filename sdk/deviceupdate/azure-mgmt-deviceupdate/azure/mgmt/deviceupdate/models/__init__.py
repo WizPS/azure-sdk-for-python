@@ -13,6 +13,7 @@ from ._models_py3 import CheckNameAvailabilityRequest
 from ._models_py3 import CheckNameAvailabilityResponse
 from ._models_py3 import ConnectionDetails
 from ._models_py3 import DiagnosticStorageProperties
+from ._models_py3 import Encryption
 from ._models_py3 import ErrorAdditionalInfo
 from ._models_py3 import ErrorDetail
 from ._models_py3 import ErrorResponse
@@ -49,79 +50,82 @@ from ._models_py3 import TagUpdate
 from ._models_py3 import TrackedResource
 from ._models_py3 import UserAssignedIdentity
 
-
-from ._device_update_enums import (
-    ActionType,
-    AuthenticationType,
-    CheckNameAvailabilityReason,
-    CreatedByType,
-    GroupIdProvisioningState,
-    ManagedServiceIdentityType,
-    Origin,
-    PrivateEndpointConnectionProvisioningState,
-    PrivateEndpointConnectionProxyProvisioningState,
-    PrivateEndpointServiceConnectionStatus,
-    ProvisioningState,
-    PublicNetworkAccess,
-    Role,
-    SKU,
-)
+from ._device_update_mgmt_client_enums import ActionType
+from ._device_update_mgmt_client_enums import AuthenticationType
+from ._device_update_mgmt_client_enums import CheckNameAvailabilityReason
+from ._device_update_mgmt_client_enums import CreatedByType
+from ._device_update_mgmt_client_enums import GroupIdProvisioningState
+from ._device_update_mgmt_client_enums import ManagedServiceIdentityType
+from ._device_update_mgmt_client_enums import Origin
+from ._device_update_mgmt_client_enums import PrivateEndpointConnectionProvisioningState
+from ._device_update_mgmt_client_enums import PrivateEndpointConnectionProxyProvisioningState
+from ._device_update_mgmt_client_enums import PrivateEndpointServiceConnectionStatus
+from ._device_update_mgmt_client_enums import ProvisioningState
+from ._device_update_mgmt_client_enums import PublicNetworkAccess
+from ._device_update_mgmt_client_enums import Role
+from ._device_update_mgmt_client_enums import SKU
+from ._patch import __all__ as _patch_all
+from ._patch import *  # pylint: disable=unused-wildcard-import
+from ._patch import patch_sdk as _patch_sdk
 
 __all__ = [
-    'Account',
-    'AccountList',
-    'AccountUpdate',
-    'CheckNameAvailabilityRequest',
-    'CheckNameAvailabilityResponse',
-    'ConnectionDetails',
-    'DiagnosticStorageProperties',
-    'ErrorAdditionalInfo',
-    'ErrorDetail',
-    'ErrorResponse',
-    'GroupConnectivityInformation',
-    'GroupInformation',
-    'GroupInformationProperties',
-    'Instance',
-    'InstanceList',
-    'IotHubSettings',
-    'Location',
-    'ManagedServiceIdentity',
-    'Operation',
-    'OperationDisplay',
-    'OperationListResult',
-    'PrivateEndpoint',
-    'PrivateEndpointConnection',
-    'PrivateEndpointConnectionListResult',
-    'PrivateEndpointConnectionProxy',
-    'PrivateEndpointConnectionProxyListResult',
-    'PrivateEndpointConnectionProxyProperties',
-    'PrivateEndpointUpdate',
-    'PrivateLinkResourceListResult',
-    'PrivateLinkResourceProperties',
-    'PrivateLinkServiceConnection',
-    'PrivateLinkServiceConnectionState',
-    'PrivateLinkServiceProxy',
-    'PrivateLinkServiceProxyRemotePrivateEndpointConnection',
-    'ProxyResource',
-    'RemotePrivateEndpoint',
-    'RemotePrivateEndpointConnection',
-    'Resource',
-    'SystemData',
-    'TagUpdate',
-    'TrackedResource',
-    'UserAssignedIdentity',
-    'ActionType',
-    'AuthenticationType',
-    'CheckNameAvailabilityReason',
-    'CreatedByType',
-    'GroupIdProvisioningState',
-    'ManagedServiceIdentityType',
-    'Origin',
-    'PrivateEndpointConnectionProvisioningState',
-    'PrivateEndpointConnectionProxyProvisioningState',
-    'PrivateEndpointServiceConnectionStatus',
-    'ProvisioningState',
-    'PublicNetworkAccess',
-    'Role',
-    'SKU',
+    "Account",
+    "AccountList",
+    "AccountUpdate",
+    "CheckNameAvailabilityRequest",
+    "CheckNameAvailabilityResponse",
+    "ConnectionDetails",
+    "DiagnosticStorageProperties",
+    "Encryption",
+    "ErrorAdditionalInfo",
+    "ErrorDetail",
+    "ErrorResponse",
+    "GroupConnectivityInformation",
+    "GroupInformation",
+    "GroupInformationProperties",
+    "Instance",
+    "InstanceList",
+    "IotHubSettings",
+    "Location",
+    "ManagedServiceIdentity",
+    "Operation",
+    "OperationDisplay",
+    "OperationListResult",
+    "PrivateEndpoint",
+    "PrivateEndpointConnection",
+    "PrivateEndpointConnectionListResult",
+    "PrivateEndpointConnectionProxy",
+    "PrivateEndpointConnectionProxyListResult",
+    "PrivateEndpointConnectionProxyProperties",
+    "PrivateEndpointUpdate",
+    "PrivateLinkResourceListResult",
+    "PrivateLinkResourceProperties",
+    "PrivateLinkServiceConnection",
+    "PrivateLinkServiceConnectionState",
+    "PrivateLinkServiceProxy",
+    "PrivateLinkServiceProxyRemotePrivateEndpointConnection",
+    "ProxyResource",
+    "RemotePrivateEndpoint",
+    "RemotePrivateEndpointConnection",
+    "Resource",
+    "SystemData",
+    "TagUpdate",
+    "TrackedResource",
+    "UserAssignedIdentity",
+    "ActionType",
+    "AuthenticationType",
+    "CheckNameAvailabilityReason",
+    "CreatedByType",
+    "GroupIdProvisioningState",
+    "ManagedServiceIdentityType",
+    "Origin",
+    "PrivateEndpointConnectionProvisioningState",
+    "PrivateEndpointConnectionProxyProvisioningState",
+    "PrivateEndpointServiceConnectionStatus",
+    "ProvisioningState",
+    "PublicNetworkAccess",
+    "Role",
+    "SKU",
 ]
+__all__.extend([p for p in _patch_all if p not in __all__])
+_patch_sdk()

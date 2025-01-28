@@ -2,29 +2,41 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from azure.ai.ml._restclient.v2022_01_01_preview.models import AmlComputeNodeInformation
+from typing import Dict, Optional
+
+from azure.ai.ml._restclient.v2022_10_01_preview.models import AmlComputeNodeInformation
 from azure.ai.ml._schema.compute.aml_compute_node_info import AmlComputeNodeInfoSchema
-from typing import Dict
-from azure.ai.ml.constants import (
-    BASE_PATH_CONTEXT_KEY,
-)
+from azure.ai.ml.constants._common import BASE_PATH_CONTEXT_KEY
 
 
-class AmlComputeNodeInfo(AmlComputeNodeInformation):
-    def __init__(self, **kwargs):
-        """Compute node information related to a AmlCompute
-        Variables are only populated by the server, and will be ignored when sending a request.
-        """
+class AmlComputeNodeInfo:
+    """Compute node information related to AmlCompute."""
 
-        super().__init__(**kwargs)
+    def __init__(self) -> None:
+        self.node_id = None
+        self.private_ip_address = None
+        self.public_ip_address = None
+        self.port = None
+        self.node_state = None
+        self.run_id: Optional[str] = None
 
     @property
-    def current_job_name(self) -> str:
-        return self.__dict__["run_id"]
+    def current_job_name(self) -> Optional[str]:
+        """The run ID of the current job.
+
+        :return: The run ID of the current job.
+        :rtype: str
+        """
+        return self.run_id
 
     @current_job_name.setter
     def current_job_name(self, value: str) -> None:
-        self.__dict__["run_id"] = value
+        """Set the current job run ID.
+
+        :param value: The job run ID.
+        :type value: str
+        """
+        self.run_id = value
 
     @classmethod
     def _from_rest_object(cls, rest_obj: AmlComputeNodeInformation) -> "AmlComputeNodeInfo":
@@ -33,4 +45,6 @@ class AmlComputeNodeInfo(AmlComputeNodeInformation):
         return result
 
     def _to_dict(self) -> Dict:
-        return AmlComputeNodeInfoSchema(context={BASE_PATH_CONTEXT_KEY: "./"}).dump(self)
+        # pylint: disable=no-member
+        res: dict = AmlComputeNodeInfoSchema(context={BASE_PATH_CONTEXT_KEY: "./"}).dump(self)
+        return res

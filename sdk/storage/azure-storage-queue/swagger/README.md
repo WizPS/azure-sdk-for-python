@@ -19,7 +19,7 @@ autorest --use=C:/work/autorest.python --version=2.0.4280
 
 ### Settings
 ``` yaml
-input-file: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/storage/data-plane/Microsoft.QueueStorage/preview/2018-03-28/queue.json
+input-file: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/storage/data-plane/Microsoft.QueueStorage/stable/2018-03-28/queue.json
 output-folder: ../azure/storage/queue/_generated
 namespace: azure.storage.queue
 no-namespace-folders: true
@@ -29,6 +29,8 @@ vanilla: true
 clear-output-folder: true
 python: true
 version-tolerant: false
+modelerfour:
+    seal-single-value-enum-by-default: true
 ```
 
 ### Remove x-ms-pageable
@@ -121,5 +123,34 @@ directive:
         }
         $[newName] = $[oldName];
         delete $[oldName];
+    }
+```
+
+## Remove {queueName} from url
+
+This directive is necessary for Python (also this directive is copied from .net) because we removed our call to
+_format_url_section in our generated code. We also add dummy query parameters to avoid collisions.
+
+```yaml
+directive:
+- from: swagger-document
+  where: $["x-ms-paths"]
+  transform: >
+    for (const property in $)
+    {
+        if (property.includes('/{queueName}/messages/{messageid}'))
+        {
+            var oldName = property;
+            var newName = property.replace('/{queueName}', '').replace('/{messageid}', '?restype=dummpyMessage');
+            $[newName] = $[oldName];
+            delete $[oldName];
+        }
+        else if (property.includes('/{queueName}'))
+        {
+            var oldName = property;
+            var newName = property.replace('/{queueName}', '');
+            $[newName] = $[oldName];
+            delete $[oldName];
+        }
     }
 ```

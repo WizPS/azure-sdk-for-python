@@ -1,19 +1,29 @@
 ```mermaid
 %% STEPS TO GENERATE IMAGE
 %% =======================
-%% 1. Install mermaid CLI (see https://github.com/mermaid-js/mermaid-cli/blob/master/README.md)
+%% 1. Install mermaid CLI v10.9.1 (see https://github.com/mermaid-js/mermaid-cli/blob/master/README.md):
+%%    npm i -g @mermaid-js/mermaid-cli@10.9.1
 %% 2. Run command: mmdc -i DefaultAzureCredentialAuthFlow.md -o DefaultAzureCredentialAuthFlow.svg
 
-flowchart LR;
-    A(Environment):::deployed ==> B(Managed Identity):::deployed ==> C(VS Code):::developer ==> D(Azure CLI):::developer ==> E(Azure PowerShell):::developer ==> F(Interactive browser):::interactive;
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'tertiaryBorderColor': '#fff',
+      'tertiaryColor': '#fff'
+    }
+  }
+}%%
 
+flowchart LR;
     subgraph CREDENTIAL TYPES;
         direction LR;
-        Deployed(Deployed service):::deployed ==> Developer(Developer):::developer ==> Interactive(Interactive developer):::interactive;
+        Deployed(Deployed service):::deployed ~~~ Developer(Developer):::developer ~~~ Interactive(Interactive):::interactive;
+    end;
 
-        %% Hide links between boxes in the legend by setting width to 0. The integers after "linkStyle" represent link indices.
-        linkStyle 5 stroke-width:0px;
-        linkStyle 6 stroke-width:0px;
+    subgraph CREDENTIALS;
+        direction LR;
+        A(Environment):::deployed --> B(Workload Identity):::deployed --> C(Managed Identity):::deployed --> D(Azure CLI):::developer --> E(Azure PowerShell):::developer --> F(Azure Developer CLI):::developer --> G(Interactive browser):::interactive;
     end;
 
     %% Define styles for credential type boxes
@@ -22,10 +32,11 @@ flowchart LR;
     classDef interactive fill:#A5A5A5, stroke:#828282;
 
     %% Add API ref links to credential type boxes
-    click A "https://docs.microsoft.com/python/api/azure-identity/azure.identity.environmentcredential?view=azure-python" _blank;
-    click B "https://docs.microsoft.com/python/api/azure-identity/azure.identity.managedidentitycredential?view=azure-python" _blank;
-    click C "https://docs.microsoft.com/python/api/azure-identity/azure.identity.visualstudiocodecredential?view=azure-python" _blank;
-    click D "https://docs.microsoft.com/python/api/azure-identity/azure.identity.azureclicredential?view=azure-python" _blank;
-    click E "https://docs.microsoft.com/python/api/azure-identity/azure.identity.azurepowershellcredential?view=azure-python" _blank;
-    click F "https://docs.microsoft.com/python/api/azure-identity/azure.identity.interactivebrowsercredential?view=azure-python" _blank;
+    click A "https://aka.ms/azsdk/python/identity/environmentcredential" _blank;
+    click B "https://aka.ms/azsdk/python/identity/workloadidentitycredential" _blank;
+    click C "https://aka.ms/azsdk/python/identity/managedidentitycredential" _blank;
+    click D "https://aka.ms/azsdk/python/identity/azclicredential" _blank;
+    click E "https://aka.ms/azsdk/python/identity/powershellcredential" _blank;
+    click F "https://aka.ms/azsdk/python/identity/azuredeveloperclicredential" _blank;
+    click G "https://aka.ms/azsdk/python/identity/interactivebrowsercredential" _blank;
 ```

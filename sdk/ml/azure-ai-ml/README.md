@@ -1,11 +1,16 @@
 # Azure ML Package client library for Python
 
-We are excited to introduce the public  preview of Azure Machine Learning Python SDK v2. The Python SDK v2 introduces new SDK capabilities like standalone local jobs, reusable components for pipelines and managed online/batch inferencing. Python SDK v2 allows you to move from simple to complex tasks easily and incrementally. This is enabled by using a common object model which brings concept reuse and consistency of actions across various tasks. The SDK v2 shares its foundation with the CLI v2 which is currently in also in public preview.
+We are excited to introduce the GA of Azure Machine Learning Python SDK v2. The Python SDK v2 introduces new SDK capabilities like standalone local jobs, reusable components for pipelines and managed online/batch inferencing. Python SDK v2 allows you to move from simple to complex tasks easily and incrementally. This is enabled by using a common object model which brings concept reuse and consistency of actions across various tasks. The SDK v2 shares its foundation with the CLI v2 which is also GA.
 
-[Source code][source_code] | [Package (PyPI)][ml_pypi] | [API reference documentation][ml_ref_docs] | [Product documentation][product_documentation] | [Samples][ml_samples]
+[Source code][source_code]
+| [Package (PyPI)][ml_pypi]
+| [Package (Conda)][ml_conda]
+| [API reference documentation][ml_ref_docs]
+| [Product documentation][product_documentation]
+| [Samples][ml_samples]
 
 
-This package has been tested with Python 3.6, 3.7, 3.8, 3.9 and 3.10.
+This package has been tested with Python 3.8, 3.9, 3.10, 3.11 and 3.12.
 
 For a more complete set of Azure libraries, see https://aka.ms/azsdk/python/all
 
@@ -13,7 +18,7 @@ For a more complete set of Azure libraries, see https://aka.ms/azsdk/python/all
 
 ### Prerequisites
 
-- Python 3.6 later is required to use this package.
+- Python 3.7 or later is required to use this package.
 - You must have an [Azure subscription][azure_subscription].
 - An [Azure Machine Learning Workspace][workspace].
 
@@ -23,6 +28,7 @@ Install the Azure ML client library for Python with [pip][pip_link]:
 
 ```bash
 pip install azure-ai-ml
+pip install azure-identity
 ```
 
 ### Authenticate the client
@@ -92,6 +98,14 @@ headers, can be enabled on a client with the `logging_enable` argument.
 
 See full SDK logging documentation with examples [here][sdk_logging_docs].
 
+### Telemetry
+
+The Azure ML Python SDK includes a telemetry feature that collects usage and failure data about the SDK and sends it to Microsoft when you use the SDK in a Jupyter Notebook only.
+<u>Telemetry will **not** be collected for any use of the Python SDK outside of a Jupyter Notebook.</u>
+
+Telemetry data helps the SDK team understand how the SDK is used so it can be improved and the information about failures helps the team resolve problems and fix bugs.
+The SDK telemetry feature is enabled by default for Jupyter Notebook usage and cannot be enabled for non-Jupyter scenarios. To opt out of the telemetry feature in a Jupyter scenario, pass in `enable_telemetry=False` when constructing your MLClient object.
+
 ## Next steps
 
 - View our [samples][ml_samples].
@@ -108,19 +122,19 @@ This project has adopted the [Microsoft Open Source Code of Conduct][code_of_con
 
 [source_code]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/ml/azure-ai-ml
 [ml_pypi]: https://pypi.org/project/azure-ai-ml/
-[ml_ref_docs]: https://docs.microsoft.com/python/api/azure-ai-ml/?view=azure-ml-py
-[ml_samples]: https://github.com/Azure/azureml-examples/tree/sdk-preview/sdk
-[product_documentation]: https://docs.microsoft.com/azure/machine-learning/
+[ml_conda]: https://anaconda.org/microsoft/azure-ai-ml/
+[ml_ref_docs]: https://learn.microsoft.com/python/api/azure-ai-ml/?view=azure-python
+[ml_samples]: https://github.com/Azure/azureml-examples/tree/main/sdk/python
+[product_documentation]: https://learn.microsoft.com/azure/machine-learning/
 [azure_subscription]: https://azure.microsoft.com/free/
-[workspace]: https://docs.microsoft.com/azure/machine-learning/concept-workspace
+[workspace]: https://learn.microsoft.com/azure/machine-learning/concept-workspace
 [python_logging]: https://docs.python.org/3/library/logging.html
-[sdk_logging_docs]: https://docs.microsoft.com/azure/developer/python/azure-sdk-logging
+[sdk_logging_docs]: https://learn.microsoft.com/azure/developer/python/azure-sdk-logging
 [azure_core_readme]: https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/core/azure-core/README.md
 [pip_link]: https://pypi.org/project/pip/
 [azure_core_ref_docs]: https://aka.ms/azsdk-python-core-policies
 [azure_core]: https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/core/azure-core/README.md
 [azure_identity]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/identity/azure-identity
-[python_logging]: https://docs.python.org/3/library/logging.html
 [cla]: https://cla.microsoft.com
 [code_of_conduct]: https://opensource.microsoft.com/codeofconduct/
 [coc_faq]: https://opensource.microsoft.com/codeofconduct/faq/

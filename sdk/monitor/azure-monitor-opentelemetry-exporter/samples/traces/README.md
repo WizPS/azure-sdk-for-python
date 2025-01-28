@@ -6,16 +6,24 @@ products:
   - azure-monitor
 ---
 
+<!-- cSpell:disable -->
 # Microsoft Azure Monitor Opentelemetry Exporter Trace Python Samples
 
 These code samples show common champion scenario operations with the AzureMonitorTraceExporter.
 
-* Client: [sample_client.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/sample_client.py)
-* Collector: [sample_collector.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/collector/sample_collector.py)
-* Jaeger: [sample_jaeger.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/sample_jaeger.py)
-* Server: [sample_server.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/sample_server.py)
 * Span Event: [sample_span_event.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/sample_span_event.py)
 * Trace: [sample_trace.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/sample_trace.py)
+
+* Collector: [sample_collector.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/collector/sample_collector.py)
+* Jaeger: [sample_jaeger.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/sample_jaeger.py)
+
+* Django instrumentation: [manage.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/django/sample/manage.py)
+* Flask instrumentation: [sample_flask.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/sample_flask.py)
+* Requests instrumentation: [sample_requests.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/sample_requests.py)
+
+* Psycopg2 instrumentation: [sample_psycopg2.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/sample_psycopg2.py)
+
+* Emitting metrics with instrumentations: [sample_metrics.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/sample_metrics.py)
 
 * Azure AppConfig Add Config Setting: [sample_app_config.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/sample_app_config.py)
 * Azure Communication Chat Create Client/Thread: [sample_comm_chat.py](https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/monitor/azure-monitor-opentelemetry-exporter/samples/traces/sample_comm_chat.py)
@@ -42,7 +50,57 @@ $ pip install azure-monitor-opentelemetry-exporter --pre
 
 ## Run the Applications
 
-### Client
+### Trace
+
+* Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
+
+* Run the sample
+
+```sh
+$ # from this directory
+$ python sample_trace.py
+```
+
+### Span Event
+
+* Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
+
+* Run the sample
+
+```sh
+$ # from this directory
+$ python sample_span_event.py
+```
+
+### Django instrumentation
+
+* Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
+
+* Run the sample
+
+```sh
+$ pip install opentelemetry-instrumentation-django
+$ # from the django directory
+$ python manage.py runserver
+```
+
+* Open http://localhost:8000/
+
+### Flask instrumentation
+
+* Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
+
+* Run the sample
+
+```sh
+$ pip install opentelemetry-instrumentation-flask
+$ # from this directory
+$ python sample_flask.py
+```
+
+* Open http://localhost:8080/
+
+### Requests instrumentation
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 
@@ -51,8 +109,37 @@ $ pip install azure-monitor-opentelemetry-exporter --pre
 ```sh
 $ pip install opentelemetry-instrumentation-requests
 $ # from this directory
-$ python sample_request.py
+$ python sample_requests.py
 ```
+
+### Psycopg2 instrumentation
+
+* Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
+
+* Ensure you have a database named `test` with a table named `test_table`, make sure `test_table` has a field called `test_field`
+* Supply your `user` and `password` for your database if needed
+* Run the sample
+
+```sh
+$ pip install opentelemetry-instrumentation-psycopg2
+$ # from this directory
+$ python sample_psycopg2.py
+```
+
+### Emitting metrics with instrumentations
+
+* Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
+
+* Run the sample
+
+```sh
+$ pip install opentelemetry-instrumentation-flask
+$ pip install opentelemetry-instrumentation-requests
+$ # from this directory
+$ python sample_metrics.py
+```
+
+Calls made with the underlying instrumented libraries will track metrics information in the metrics explorer view in Application Insights. Only certain instrumentations support metrics collection, refer to https://github.com/open-telemetry/opentelemetry-python-contrib/blob/main/instrumentation/README.md for the full list. This also assumes you are using the latest versions of the instrumentation libraries.
 
 ### Collector
 
@@ -79,7 +166,7 @@ $ pip install opentelemetry-exporter-otlp
 $ python sample_collector.py
 ```
 
-* You should be able to see your traces in the Zipkin backend as well as Azure Monitor application insights backend.
+* You should be able to see your traces in the Zipkin backend as well as Azure Monitor Application Insights backend.
 
 ### Jaeger
 
@@ -106,48 +193,11 @@ $ # from this directory
 $ python sample_jaeger.py
 ```
 
-* You should be able to see your traces in the Jaeger backend as well as Azure Monitor application insights backend.
-
-### Span Event
-
-* Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
-
-* Run the sample
-
-```sh
-$ # from this directory
-$ python sample_span_event.py
-```
-
-### Server
-
-* Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
-
-* Run the sample
-
-```sh
-$ pip install opentelemetry-instrumentation-requests
-$ pip install opentelemetry-instrumentation-flask
-$ # from this directory
-$ python sample_server.py
-```
-
-* Open http://localhost:8080/
-
-### Trace
-
-* Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
-
-* Run the sample
-
-```sh
-$ # from this directory
-$ python sample_trace.py
-```
+* You should be able to see your traces in the Jaeger backend as well as Azure Monitor Application Insights backend.
 
 ### Azure AppConfig Add Config Setting
 
-The following sample assumes that you have setup an Azure App Configuration [Store](https://docs.microsoft.com/azure/azure-app-configuration/quickstart-python).
+The following sample assumes that you have setup an Azure App Configuration [Store](https://learn.microsoft.com/azure/azure-app-configuration/quickstart-python).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 
@@ -164,7 +214,7 @@ $ python sample_app_config.py
 
 ### Azure Communication Chat Create Client/Thread
 
-The following sample assumes that you have setup an Azure Communication Services [resource](https://docs.microsoft.com/azure/communication-services/quickstarts/create-communication-resource).
+The following sample assumes that you have setup an Azure Communication Services [resource](https://learn.microsoft.com/azure/communication-services/quickstarts/create-communication-resource).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 
@@ -183,7 +233,7 @@ $ python sample_comm_chat.py
 
 ### Azure Communication Phone Numbers List Purchased Numbers
 
-The following sample assumes that you have setup an Azure Communication Services [resource](https://docs.microsoft.com/azure/communication-services/quickstarts/create-communication-resource).
+The following sample assumes that you have setup an Azure Communication Services [resource](https://learn.microsoft.com/azure/communication-services/quickstarts/create-communication-resource).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 
@@ -200,7 +250,7 @@ $ python sample_comm_phone.py
 
 ### Azure Communication SMS Send Message
 
-The following sample assumes that you have setup an Azure Communication Services [resource](https://docs.microsoft.com/azure/communication-services/quickstarts/create-communication-resource).
+The following sample assumes that you have setup an Azure Communication Services [resource](https://learn.microsoft.com/azure/communication-services/quickstarts/create-communication-resource).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 
@@ -217,7 +267,7 @@ $ python sample_comm_sms.py
 
 ### Azure CosmosDb Create Db/Container
 
-The following sample assumes that you have setup Azure CosmosDb [account](https://docs.microsoft.com/azure/cosmos-db/sql/create-cosmosdb-resources-portal).
+The following sample assumes that you have setup Azure CosmosDb [account](https://learn.microsoft.com/azure/cosmos-db/sql/create-cosmosdb-resources-portal).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 * Update `ACCOUNT_URI` environment variable
@@ -236,7 +286,7 @@ $ python sample_cosmos.py
 
 ### Azure EventHub Send EventData
 
-The following sample assumes that you have setup an Azure EventHubs namespace and [EventHub](https://docs.microsoft.com/azure/event-hubs/event-hubs-create).
+The following sample assumes that you have setup an Azure EventHubs namespace and [EventHub](https://learn.microsoft.com/azure/event-hubs/event-hubs-create).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 * Update `EVENT_HUB_CONN_STR` environment variable
@@ -255,7 +305,7 @@ $ python sample_event_hub.py
 
 ### Azure EventHub Blob Storage Checkpoint Store
 
-The following sample assumes that you have setup an Azure EventHubs namespace, [EventHub](https://docs.microsoft.com/azure/event-hubs/event-hubs-create) and Azure Blob [storage](https://docs.microsoft.com/azure/storage/blobs/storage-quickstart-blobs-portal).
+The following sample assumes that you have setup an Azure EventHubs namespace, [EventHub](https://learn.microsoft.com/azure/event-hubs/event-hubs-create) and Azure Blob [storage](https://learn.microsoft.com/azure/storage/blobs/storage-quickstart-blobs-portal).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 * Update `EVENT_HUB_CONN_STR` environment variable
@@ -275,7 +325,7 @@ $ python sample_blob_checkpoint.py
 
 ### Azure EventGrid Send Event
 
-The following sample assumes that you have setup an Azure Event Grid [Topic](https://docs.microsoft.com/azure/event-grid/custom-event-quickstart-portal).
+The following sample assumes that you have setup an Azure Event Grid [Topic](https://learn.microsoft.com/azure/event-grid/custom-event-quickstart-portal).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 * Update `EG_ACCESS_KEY` environment variable
@@ -294,7 +344,7 @@ $ python sample_event_grid.py
 
 ### Azure Form Recognizer Analyze Document
 
-The following sample assumes that you have setup an Azure Form Recognizer [Resource](https://docs.microsoft.com/azure/cognitive-services/cognitive-services-apis-create-account).
+The following sample assumes that you have setup an Azure Form Recognizer [Resource](https://learn.microsoft.com/azure/cognitive-services/cognitive-services-apis-create-account).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 
@@ -311,7 +361,7 @@ $ python sample_form_recognizer.py
 
 ### Azure KeyVault Create Certificate
 
-The following sample assumes that you have setup an Azure Key Vault [resource](https://docs.microsoft.com/azure/key-vault/general/quick-create-portal) and a service [principal](https://docs.microsoft.com/azure/active-directory/develop/howto-create-service-principal-portal) for authentication.
+The following sample assumes that you have setup an Azure Key Vault [resource](https://learn.microsoft.com/azure/key-vault/general/quick-create-portal) and a service [principal](https://learn.microsoft.com/azure/active-directory/develop/howto-create-service-principal-portal) for authentication.
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 
@@ -330,7 +380,7 @@ $ python sample_key_cert.py
 
 ### Azure KeyVault Set Secret
 
-The following sample assumes that you have setup an Azure Key Vault [resource](https://docs.microsoft.com/azure/key-vault/general/quick-create-portal) and a service [principal](https://docs.microsoft.com/azure/active-directory/develop/howto-create-service-principal-portal) for authentication.
+The following sample assumes that you have setup an Azure Key Vault [resource](https://learn.microsoft.com/azure/key-vault/general/quick-create-portal) and a service [principal](https://learn.microsoft.com/azure/active-directory/develop/howto-create-service-principal-portal) for authentication.
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 
@@ -349,7 +399,7 @@ $ python sample_key_secret.py
 
 ### Azure KeyVault Create Keys
 
-The following sample assumes that you have setup an Azure Key Vault [resource](https://docs.microsoft.com/azure/key-vault/general/quick-create-portal) and a service [principal](https://docs.microsoft.com/azure/active-directory/develop/howto-create-service-principal-portal) for authentication.
+The following sample assumes that you have setup an Azure Key Vault [resource](https://learn.microsoft.com/azure/key-vault/general/quick-create-portal) and a service [principal](https://learn.microsoft.com/azure/active-directory/develop/howto-create-service-principal-portal) for authentication.
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 
@@ -368,7 +418,7 @@ $ python sample_key_keys.py
 
 ### Azure Service Bus Send
 
-The following sample assumes that you have setup an Azure Service Bus [namespace](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-quickstart-portal).
+The following sample assumes that you have setup an Azure Service Bus [namespace](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-quickstart-portal).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 * Update `SERVICE_BUS_CONN_STR` environment variable
@@ -387,7 +437,7 @@ $ python sample_servicebus_send.py
 
 ### Azure Service Bus Receive
 
-The following sample assumes that you have setup an Azure Service Bus [namespace](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-quickstart-portal).
+The following sample assumes that you have setup an Azure Service Bus [namespace](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-quickstart-portal).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 * Update `SERVICE_BUS_CONN_STR` environment variable
@@ -406,7 +456,7 @@ $ python sample_servicebus_receive.py
 
 ### Azure Storage Blob Create Container
 
-The following sample assumes that you have setup Azure Blob [storage](https://docs.microsoft.com/azure/storage/blobs/storage-quickstart-blobs-portal).
+The following sample assumes that you have setup Azure Blob [storage](https://learn.microsoft.com/azure/storage/blobs/storage-quickstart-blobs-portal).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 * Update `AZURE_STORAGE_CONNECTION_STRING` environment variable
@@ -425,7 +475,7 @@ $ python sample_storage_blob.py
 
 ### Azure Text Analytics Extract Key Phrases
 
-The following sample assumes that you have setup an Azure Cognitive Services [Resource](https://docs.microsoft.com/azure/cognitive-services/cognitive-services-apis-create-account).
+The following sample assumes that you have setup an Azure Cognitive Services [Resource](https://learn.microsoft.com/azure/cognitive-services/cognitive-services-apis-create-account).
 
 * Update `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable
 
@@ -443,4 +493,6 @@ $ python sample_text_analytics.py
 ## Explore the data
 
 After running the applications, data would be available in [Azure](
-https://docs.microsoft.com/azure/azure-monitor/app/app-insights-overview#where-do-i-see-my-telemetry)
+https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview#where-do-i-see-my-telemetry)
+
+<!-- cSpell:enable -->

@@ -28,10 +28,11 @@ extends:
   parameters:
     ServiceDirectory: monitor
     TestProxy: true
-    BuildTargetingString: '*'
     Artifacts:
     - name: azure-mgmt-monitor
       safeName: azuremgmtmonitor
+    - name: azure-monitor-opentelemetry
+      safeName: azuremonitoropentelemetry
     - name: azure-monitor-opentelemetry-exporter
       safeName: azuremonitoropentelemetryexporter
     - name: azure-monitor-query

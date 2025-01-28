@@ -1,4 +1,4 @@
-# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines,too-many-statements
 # coding=utf-8
 # --------------------------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
@@ -9,7 +9,14 @@
 from typing import Any, AsyncIterable, Callable, Dict, Optional, TypeVar, Union, cast
 
 from azure.core.async_paging import AsyncItemPaged, AsyncList
-from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import (
+    ClientAuthenticationError,
+    HttpResponseError,
+    ResourceExistsError,
+    ResourceNotFoundError,
+    ResourceNotModifiedError,
+    map_error,
+)
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import AsyncHttpResponse
 from azure.core.polling import AsyncLROPoller, AsyncNoPolling, AsyncPollingMethod
@@ -21,9 +28,21 @@ from azure.core.utils import case_insensitive_dict
 
 from ... import models as _models
 from ..._vendor import _convert_request
-from ...operations._trigger_operations import build_create_or_update_trigger_request_initial, build_delete_trigger_request_initial, build_get_event_subscription_status_request, build_get_trigger_request, build_get_triggers_by_workspace_request, build_start_trigger_request_initial, build_stop_trigger_request_initial, build_subscribe_trigger_to_events_request_initial, build_unsubscribe_trigger_from_events_request_initial
-T = TypeVar('T')
+from ...operations._trigger_operations import (
+    build_create_or_update_trigger_request,
+    build_delete_trigger_request,
+    build_get_event_subscription_status_request,
+    build_get_trigger_request,
+    build_get_triggers_by_workspace_request,
+    build_start_trigger_request,
+    build_stop_trigger_request,
+    build_subscribe_trigger_to_events_request,
+    build_unsubscribe_trigger_from_events_request,
+)
+
+T = TypeVar("T")
 ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
+
 
 class TriggerOperations:
     """
@@ -44,141 +63,122 @@ class TriggerOperations:
         self._serialize = input_args.pop(0) if input_args else kwargs.pop("serializer")
         self._deserialize = input_args.pop(0) if input_args else kwargs.pop("deserializer")
 
-
     @distributed_trace
-    def get_triggers_by_workspace(
-        self,
-        **kwargs: Any
-    ) -> AsyncIterable[_models.TriggerListResponse]:
+    def get_triggers_by_workspace(self, **kwargs: Any) -> AsyncIterable["_models.TriggerResource"]:
         """Lists triggers.
 
-        :keyword api_version: Api Version. Default value is "2020-12-01". Note that overriding this
-         default value may result in unsupported behavior.
-        :paramtype api_version: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: An iterator like instance of either TriggerListResponse or the result of cls(response)
+        :return: An iterator like instance of either TriggerResource or the result of cls(response)
         :rtype:
-         ~azure.core.async_paging.AsyncItemPaged[~azure.synapse.artifacts.models.TriggerListResponse]
-        :raises: ~azure.core.exceptions.HttpResponseError
+         ~azure.core.async_paging.AsyncItemPaged[~azure.synapse.artifacts.models.TriggerResource]
+        :raises ~azure.core.exceptions.HttpResponseError:
         """
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[_models.TriggerListResponse]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[_models.TriggerListResponse] = kwargs.pop("cls", None)
 
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
+            304: ResourceNotModifiedError,
         }
-        error_map.update(kwargs.pop('error_map', {}) or {})
+        error_map.update(kwargs.pop("error_map", {}) or {})
+
         def prepare_request(next_link=None):
             if not next_link:
-                
-                request = build_get_triggers_by_workspace_request(
+
+                _request = build_get_triggers_by_workspace_request(
                     api_version=api_version,
-                    template_url=self.get_triggers_by_workspace.metadata['url'],
                     headers=_headers,
                     params=_params,
                 )
-                request = _convert_request(request)
+                _request = _convert_request(_request)
                 path_format_arguments = {
-                    "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+                    "endpoint": self._serialize.url(
+                        "self._config.endpoint", self._config.endpoint, "str", skip_quote=True
+                    ),
                 }
-                request.url = self._client.format_url(request.url, **path_format_arguments)  # type: ignore
+                _request.url = self._client.format_url(_request.url, **path_format_arguments)
 
             else:
-                
-                request = build_get_triggers_by_workspace_request(
-                    api_version=api_version,
-                    template_url=next_link,
-                    headers=_headers,
-                    params=_params,
-                )
-                request = _convert_request(request)
+                _request = HttpRequest("GET", next_link)
+                _request = _convert_request(_request)
                 path_format_arguments = {
-                    "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+                    "endpoint": self._serialize.url(
+                        "self._config.endpoint", self._config.endpoint, "str", skip_quote=True
+                    ),
                 }
-                request.url = self._client.format_url(request.url, **path_format_arguments)  # type: ignore
-
-                path_format_arguments = {
-                    "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
-                }
-                request.method = "GET"
-            return request
+                _request.url = self._client.format_url(_request.url, **path_format_arguments)
+                _request.method = "GET"
+            return _request
 
         async def extract_data(pipeline_response):
             deserialized = self._deserialize("TriggerListResponse", pipeline_response)
             list_of_elem = deserialized.value
             if cls:
-                list_of_elem = cls(list_of_elem)
+                list_of_elem = cls(list_of_elem)  # type: ignore
             return deserialized.next_link or None, AsyncList(list_of_elem)
 
         async def get_next(next_link=None):
-            request = prepare_request(next_link)
+            _request = prepare_request(next_link)
 
-            pipeline_response = await self._client._pipeline.run(  # pylint: disable=protected-access
-                request,
-                stream=False,
-                **kwargs
+            _stream = False
+            pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
+                _request, stream=_stream, **kwargs
             )
             response = pipeline_response.http_response
 
             if response.status_code not in [200]:
                 map_error(status_code=response.status_code, response=response, error_map=error_map)
-                error = self._deserialize.failsafe_deserialize(_models.CloudError, pipeline_response)
-                raise HttpResponseError(response=response, model=error)
+                raise HttpResponseError(response=response)
 
             return pipeline_response
 
-
-        return AsyncItemPaged(
-            get_next, extract_data
-        )
-    get_triggers_by_workspace.metadata = {'url': "/triggers"}  # type: ignore
+        return AsyncItemPaged(get_next, extract_data)
 
     async def _create_or_update_trigger_initial(
-        self,
-        trigger_name: str,
-        properties: _models.Trigger,
-        if_match: Optional[str] = None,
-        **kwargs: Any
+        self, trigger_name: str, properties: _models.Trigger, if_match: Optional[str] = None, **kwargs: Any
     ) -> Optional[_models.TriggerResource]:
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
+            304: ResourceNotModifiedError,
         }
-        error_map.update(kwargs.pop('error_map', {}) or {})
+        error_map.update(kwargs.pop("error_map", {}) or {})
 
         _headers = case_insensitive_dict(kwargs.pop("headers", {}) or {})
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        content_type = kwargs.pop('content_type', _headers.pop('Content-Type', "application/json"))  # type: Optional[str]
-        cls = kwargs.pop('cls', None)  # type: ClsType[Optional[_models.TriggerResource]]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        content_type: str = kwargs.pop("content_type", _headers.pop("Content-Type", "application/json"))
+        cls: ClsType[Optional[_models.TriggerResource]] = kwargs.pop("cls", None)
 
         _trigger = _models.TriggerResource(properties=properties)
-        _json = self._serialize.body(_trigger, 'TriggerResource')
+        _json = self._serialize.body(_trigger, "TriggerResource")
 
-        request = build_create_or_update_trigger_request_initial(
+        _request = build_create_or_update_trigger_request(
             trigger_name=trigger_name,
+            if_match=if_match,
             api_version=api_version,
             content_type=content_type,
             json=_json,
-            if_match=if_match,
-            template_url=self._create_or_update_trigger_initial.metadata['url'],
             headers=_headers,
             params=_params,
         )
-        request = _convert_request(request)
+        _request = _convert_request(_request)
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
-        request.url = self._client.format_url(request.url, **path_format_arguments)  # type: ignore
+        _request.url = self._client.format_url(_request.url, **path_format_arguments)
 
-        pipeline_response = await self._client._pipeline.run(  # type: ignore # pylint: disable=protected-access
-            request,
-            stream=False,
-            **kwargs
+        _stream = False
+        pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
+            _request, stream=_stream, **kwargs
         )
+
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
@@ -187,214 +187,181 @@ class TriggerOperations:
 
         deserialized = None
         if response.status_code == 200:
-            deserialized = self._deserialize('TriggerResource', pipeline_response)
+            deserialized = self._deserialize("TriggerResource", pipeline_response)
 
         if cls:
-            return cls(pipeline_response, deserialized, {})
+            return cls(pipeline_response, deserialized, {})  # type: ignore
 
-        return deserialized
-
-    _create_or_update_trigger_initial.metadata = {'url': "/triggers/{triggerName}"}  # type: ignore
-
+        return deserialized  # type: ignore
 
     @distributed_trace_async
     async def begin_create_or_update_trigger(
-        self,
-        trigger_name: str,
-        properties: _models.Trigger,
-        if_match: Optional[str] = None,
-        **kwargs: Any
+        self, trigger_name: str, properties: _models.Trigger, if_match: Optional[str] = None, **kwargs: Any
     ) -> AsyncLROPoller[_models.TriggerResource]:
         """Creates or updates a trigger.
 
-        :param trigger_name: The trigger name.
+        :param trigger_name: The trigger name. Required.
         :type trigger_name: str
-        :param properties: Properties of the trigger.
+        :param properties: Properties of the trigger. Required.
         :type properties: ~azure.synapse.artifacts.models.Trigger
         :param if_match: ETag of the trigger entity.  Should only be specified for update, for which it
          should match existing entity or can be * for unconditional update. Default value is None.
         :type if_match: str
-        :keyword api_version: Api Version. Default value is "2020-12-01". Note that overriding this
-         default value may result in unsupported behavior.
-        :paramtype api_version: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :keyword str continuation_token: A continuation token to restart a poller from a saved state.
-        :keyword polling: By default, your polling method will be AsyncLROBasePolling. Pass in False
-         for this operation to not poll, or pass in your own initialized polling object for a personal
-         polling strategy.
-        :paramtype polling: bool or ~azure.core.polling.AsyncPollingMethod
-        :keyword int polling_interval: Default waiting time between two polls for LRO operations if no
-         Retry-After header is present.
         :return: An instance of AsyncLROPoller that returns either TriggerResource or the result of
          cls(response)
         :rtype: ~azure.core.polling.AsyncLROPoller[~azure.synapse.artifacts.models.TriggerResource]
-        :raises: ~azure.core.exceptions.HttpResponseError
+        :raises ~azure.core.exceptions.HttpResponseError:
         """
         _headers = case_insensitive_dict(kwargs.pop("headers", {}) or {})
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        content_type = kwargs.pop('content_type', _headers.pop('Content-Type', "application/json"))  # type: Optional[str]
-        cls = kwargs.pop('cls', None)  # type: ClsType[_models.TriggerResource]
-        polling = kwargs.pop('polling', True)  # type: Union[bool, AsyncPollingMethod]
-        lro_delay = kwargs.pop(
-            'polling_interval',
-            self._config.polling_interval
-        )
-        cont_token = kwargs.pop('continuation_token', None)  # type: Optional[str]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        content_type: str = kwargs.pop("content_type", _headers.pop("Content-Type", "application/json"))
+        cls: ClsType[_models.TriggerResource] = kwargs.pop("cls", None)
+        polling: Union[bool, AsyncPollingMethod] = kwargs.pop("polling", True)
+        lro_delay = kwargs.pop("polling_interval", self._config.polling_interval)
+        cont_token: Optional[str] = kwargs.pop("continuation_token", None)
         if cont_token is None:
-            raw_result = await self._create_or_update_trigger_initial(  # type: ignore
+            raw_result = await self._create_or_update_trigger_initial(
                 trigger_name=trigger_name,
                 properties=properties,
                 if_match=if_match,
                 api_version=api_version,
                 content_type=content_type,
-                cls=lambda x,y,z: x,
+                cls=lambda x, y, z: x,
                 headers=_headers,
                 params=_params,
                 **kwargs
             )
-        kwargs.pop('error_map', None)
+        kwargs.pop("error_map", None)
 
         def get_long_running_output(pipeline_response):
-            deserialized = self._deserialize('TriggerResource', pipeline_response)
+            deserialized = self._deserialize("TriggerResource", pipeline_response)
             if cls:
-                return cls(pipeline_response, deserialized, {})
+                return cls(pipeline_response, deserialized, {})  # type: ignore
             return deserialized
 
-
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
 
         if polling is True:
-            polling_method = cast(AsyncPollingMethod, AsyncLROBasePolling(
-                lro_delay,
-                
-                path_format_arguments=path_format_arguments,
-                **kwargs
-        ))  # type: AsyncPollingMethod
-        elif polling is False: polling_method = cast(AsyncPollingMethod, AsyncNoPolling())
-        else: polling_method = polling
+            polling_method: AsyncPollingMethod = cast(
+                AsyncPollingMethod,
+                AsyncLROBasePolling(lro_delay, path_format_arguments=path_format_arguments, **kwargs),
+            )
+        elif polling is False:
+            polling_method = cast(AsyncPollingMethod, AsyncNoPolling())
+        else:
+            polling_method = polling
         if cont_token:
-            return AsyncLROPoller.from_continuation_token(
+            return AsyncLROPoller[_models.TriggerResource].from_continuation_token(
                 polling_method=polling_method,
                 continuation_token=cont_token,
                 client=self._client,
-                deserialization_callback=get_long_running_output
+                deserialization_callback=get_long_running_output,
             )
-        return AsyncLROPoller(self._client, raw_result, get_long_running_output, polling_method)
-
-    begin_create_or_update_trigger.metadata = {'url': "/triggers/{triggerName}"}  # type: ignore
+        return AsyncLROPoller[_models.TriggerResource](
+            self._client, raw_result, get_long_running_output, polling_method  # type: ignore
+        )
 
     @distributed_trace_async
     async def get_trigger(
-        self,
-        trigger_name: str,
-        if_none_match: Optional[str] = None,
-        **kwargs: Any
+        self, trigger_name: str, if_none_match: Optional[str] = None, **kwargs: Any
     ) -> Optional[_models.TriggerResource]:
         """Gets a trigger.
 
-        :param trigger_name: The trigger name.
+        :param trigger_name: The trigger name. Required.
         :type trigger_name: str
         :param if_none_match: ETag of the trigger entity. Should only be specified for get. If the ETag
          matches the existing entity tag, or if * was provided, then no content will be returned.
          Default value is None.
         :type if_none_match: str
-        :keyword api_version: Api Version. Default value is "2020-12-01". Note that overriding this
-         default value may result in unsupported behavior.
-        :paramtype api_version: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: TriggerResource, or the result of cls(response)
+        :return: TriggerResource or None or the result of cls(response)
         :rtype: ~azure.synapse.artifacts.models.TriggerResource or None
-        :raises: ~azure.core.exceptions.HttpResponseError
+        :raises ~azure.core.exceptions.HttpResponseError:
         """
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
+            304: ResourceNotModifiedError,
         }
-        error_map.update(kwargs.pop('error_map', {}) or {})
+        error_map.update(kwargs.pop("error_map", {}) or {})
 
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[Optional[_models.TriggerResource]]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[Optional[_models.TriggerResource]] = kwargs.pop("cls", None)
 
-        
-        request = build_get_trigger_request(
+        _request = build_get_trigger_request(
             trigger_name=trigger_name,
-            api_version=api_version,
             if_none_match=if_none_match,
-            template_url=self.get_trigger.metadata['url'],
+            api_version=api_version,
             headers=_headers,
             params=_params,
         )
-        request = _convert_request(request)
+        _request = _convert_request(_request)
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
-        request.url = self._client.format_url(request.url, **path_format_arguments)  # type: ignore
+        _request.url = self._client.format_url(_request.url, **path_format_arguments)
 
-        pipeline_response = await self._client._pipeline.run(  # type: ignore # pylint: disable=protected-access
-            request,
-            stream=False,
-            **kwargs
+        _stream = False
+        pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
+            _request, stream=_stream, **kwargs
         )
+
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 304]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.CloudError, pipeline_response)
-            raise HttpResponseError(response=response, model=error)
+            raise HttpResponseError(response=response)
 
         deserialized = None
         if response.status_code == 200:
-            deserialized = self._deserialize('TriggerResource', pipeline_response)
+            deserialized = self._deserialize("TriggerResource", pipeline_response)
 
         if cls:
-            return cls(pipeline_response, deserialized, {})
+            return cls(pipeline_response, deserialized, {})  # type: ignore
 
-        return deserialized
-
-    get_trigger.metadata = {'url': "/triggers/{triggerName}"}  # type: ignore
-
+        return deserialized  # type: ignore
 
     async def _delete_trigger_initial(  # pylint: disable=inconsistent-return-statements
-        self,
-        trigger_name: str,
-        **kwargs: Any
+        self, trigger_name: str, **kwargs: Any
     ) -> None:
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
+            304: ResourceNotModifiedError,
         }
-        error_map.update(kwargs.pop('error_map', {}) or {})
+        error_map.update(kwargs.pop("error_map", {}) or {})
 
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[None]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[None] = kwargs.pop("cls", None)
 
-        
-        request = build_delete_trigger_request_initial(
+        _request = build_delete_trigger_request(
             trigger_name=trigger_name,
             api_version=api_version,
-            template_url=self._delete_trigger_initial.metadata['url'],
             headers=_headers,
             params=_params,
         )
-        request = _convert_request(request)
+        _request = _convert_request(_request)
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
-        request.url = self._client.format_url(request.url, **path_format_arguments)  # type: ignore
+        _request.url = self._client.format_url(_request.url, **path_format_arguments)
 
-        pipeline_response = await self._client._pipeline.run(  # type: ignore # pylint: disable=protected-access
-            request,
-            stream=False,
-            **kwargs
+        _stream = False
+        pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
+            _request, stream=_stream, **kwargs
         )
+
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
@@ -402,122 +369,97 @@ class TriggerOperations:
             raise HttpResponseError(response=response)
 
         if cls:
-            return cls(pipeline_response, None, {})
-
-    _delete_trigger_initial.metadata = {'url': "/triggers/{triggerName}"}  # type: ignore
-
+            return cls(pipeline_response, None, {})  # type: ignore
 
     @distributed_trace_async
-    async def begin_delete_trigger(  # pylint: disable=inconsistent-return-statements
-        self,
-        trigger_name: str,
-        **kwargs: Any
-    ) -> AsyncLROPoller[None]:
+    async def begin_delete_trigger(self, trigger_name: str, **kwargs: Any) -> AsyncLROPoller[None]:
         """Deletes a trigger.
 
-        :param trigger_name: The trigger name.
+        :param trigger_name: The trigger name. Required.
         :type trigger_name: str
-        :keyword api_version: Api Version. Default value is "2020-12-01". Note that overriding this
-         default value may result in unsupported behavior.
-        :paramtype api_version: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :keyword str continuation_token: A continuation token to restart a poller from a saved state.
-        :keyword polling: By default, your polling method will be AsyncLROBasePolling. Pass in False
-         for this operation to not poll, or pass in your own initialized polling object for a personal
-         polling strategy.
-        :paramtype polling: bool or ~azure.core.polling.AsyncPollingMethod
-        :keyword int polling_interval: Default waiting time between two polls for LRO operations if no
-         Retry-After header is present.
         :return: An instance of AsyncLROPoller that returns either None or the result of cls(response)
         :rtype: ~azure.core.polling.AsyncLROPoller[None]
-        :raises: ~azure.core.exceptions.HttpResponseError
+        :raises ~azure.core.exceptions.HttpResponseError:
         """
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        polling = kwargs.pop('polling', True)  # type: Union[bool, AsyncPollingMethod]
-        lro_delay = kwargs.pop(
-            'polling_interval',
-            self._config.polling_interval
-        )
-        cont_token = kwargs.pop('continuation_token', None)  # type: Optional[str]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[None] = kwargs.pop("cls", None)
+        polling: Union[bool, AsyncPollingMethod] = kwargs.pop("polling", True)
+        lro_delay = kwargs.pop("polling_interval", self._config.polling_interval)
+        cont_token: Optional[str] = kwargs.pop("continuation_token", None)
         if cont_token is None:
             raw_result = await self._delete_trigger_initial(  # type: ignore
                 trigger_name=trigger_name,
                 api_version=api_version,
-                cls=lambda x,y,z: x,
+                cls=lambda x, y, z: x,
                 headers=_headers,
                 params=_params,
                 **kwargs
             )
-        kwargs.pop('error_map', None)
+        kwargs.pop("error_map", None)
 
-        def get_long_running_output(pipeline_response):
+        def get_long_running_output(pipeline_response):  # pylint: disable=inconsistent-return-statements
             if cls:
-                return cls(pipeline_response, None, {})
-
+                return cls(pipeline_response, None, {})  # type: ignore
 
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
 
         if polling is True:
-            polling_method = cast(AsyncPollingMethod, AsyncLROBasePolling(
-                lro_delay,
-                
-                path_format_arguments=path_format_arguments,
-                **kwargs
-        ))  # type: AsyncPollingMethod
-        elif polling is False: polling_method = cast(AsyncPollingMethod, AsyncNoPolling())
-        else: polling_method = polling
+            polling_method: AsyncPollingMethod = cast(
+                AsyncPollingMethod,
+                AsyncLROBasePolling(lro_delay, path_format_arguments=path_format_arguments, **kwargs),
+            )
+        elif polling is False:
+            polling_method = cast(AsyncPollingMethod, AsyncNoPolling())
+        else:
+            polling_method = polling
         if cont_token:
-            return AsyncLROPoller.from_continuation_token(
+            return AsyncLROPoller[None].from_continuation_token(
                 polling_method=polling_method,
                 continuation_token=cont_token,
                 client=self._client,
-                deserialization_callback=get_long_running_output
+                deserialization_callback=get_long_running_output,
             )
-        return AsyncLROPoller(self._client, raw_result, get_long_running_output, polling_method)
-
-    begin_delete_trigger.metadata = {'url': "/triggers/{triggerName}"}  # type: ignore
+        return AsyncLROPoller[None](self._client, raw_result, get_long_running_output, polling_method)  # type: ignore
 
     async def _subscribe_trigger_to_events_initial(
-        self,
-        trigger_name: str,
-        **kwargs: Any
+        self, trigger_name: str, **kwargs: Any
     ) -> Optional[_models.TriggerSubscriptionOperationStatus]:
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
+            304: ResourceNotModifiedError,
         }
-        error_map.update(kwargs.pop('error_map', {}) or {})
+        error_map.update(kwargs.pop("error_map", {}) or {})
 
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[Optional[_models.TriggerSubscriptionOperationStatus]]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[Optional[_models.TriggerSubscriptionOperationStatus]] = kwargs.pop("cls", None)
 
-        
-        request = build_subscribe_trigger_to_events_request_initial(
+        _request = build_subscribe_trigger_to_events_request(
             trigger_name=trigger_name,
             api_version=api_version,
-            template_url=self._subscribe_trigger_to_events_initial.metadata['url'],
             headers=_headers,
             params=_params,
         )
-        request = _convert_request(request)
+        _request = _convert_request(_request)
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
-        request.url = self._client.format_url(request.url, **path_format_arguments)  # type: ignore
+        _request.url = self._client.format_url(_request.url, **path_format_arguments)
 
-        pipeline_response = await self._client._pipeline.run(  # type: ignore # pylint: disable=protected-access
-            request,
-            stream=False,
-            **kwargs
+        _stream = False
+        pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
+            _request, stream=_stream, **kwargs
         )
+
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
@@ -526,196 +468,166 @@ class TriggerOperations:
 
         deserialized = None
         if response.status_code == 200:
-            deserialized = self._deserialize('TriggerSubscriptionOperationStatus', pipeline_response)
+            deserialized = self._deserialize("TriggerSubscriptionOperationStatus", pipeline_response)
 
         if cls:
-            return cls(pipeline_response, deserialized, {})
+            return cls(pipeline_response, deserialized, {})  # type: ignore
 
-        return deserialized
-
-    _subscribe_trigger_to_events_initial.metadata = {'url': "/triggers/{triggerName}/subscribeToEvents"}  # type: ignore
-
+        return deserialized  # type: ignore
 
     @distributed_trace_async
     async def begin_subscribe_trigger_to_events(
-        self,
-        trigger_name: str,
-        **kwargs: Any
+        self, trigger_name: str, **kwargs: Any
     ) -> AsyncLROPoller[_models.TriggerSubscriptionOperationStatus]:
         """Subscribe event trigger to events.
 
-        :param trigger_name: The trigger name.
+        :param trigger_name: The trigger name. Required.
         :type trigger_name: str
-        :keyword api_version: Api Version. Default value is "2020-12-01". Note that overriding this
-         default value may result in unsupported behavior.
-        :paramtype api_version: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :keyword str continuation_token: A continuation token to restart a poller from a saved state.
-        :keyword polling: By default, your polling method will be AsyncLROBasePolling. Pass in False
-         for this operation to not poll, or pass in your own initialized polling object for a personal
-         polling strategy.
-        :paramtype polling: bool or ~azure.core.polling.AsyncPollingMethod
-        :keyword int polling_interval: Default waiting time between two polls for LRO operations if no
-         Retry-After header is present.
         :return: An instance of AsyncLROPoller that returns either TriggerSubscriptionOperationStatus
          or the result of cls(response)
         :rtype:
          ~azure.core.polling.AsyncLROPoller[~azure.synapse.artifacts.models.TriggerSubscriptionOperationStatus]
-        :raises: ~azure.core.exceptions.HttpResponseError
+        :raises ~azure.core.exceptions.HttpResponseError:
         """
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[_models.TriggerSubscriptionOperationStatus]
-        polling = kwargs.pop('polling', True)  # type: Union[bool, AsyncPollingMethod]
-        lro_delay = kwargs.pop(
-            'polling_interval',
-            self._config.polling_interval
-        )
-        cont_token = kwargs.pop('continuation_token', None)  # type: Optional[str]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[_models.TriggerSubscriptionOperationStatus] = kwargs.pop("cls", None)
+        polling: Union[bool, AsyncPollingMethod] = kwargs.pop("polling", True)
+        lro_delay = kwargs.pop("polling_interval", self._config.polling_interval)
+        cont_token: Optional[str] = kwargs.pop("continuation_token", None)
         if cont_token is None:
-            raw_result = await self._subscribe_trigger_to_events_initial(  # type: ignore
+            raw_result = await self._subscribe_trigger_to_events_initial(
                 trigger_name=trigger_name,
                 api_version=api_version,
-                cls=lambda x,y,z: x,
+                cls=lambda x, y, z: x,
                 headers=_headers,
                 params=_params,
                 **kwargs
             )
-        kwargs.pop('error_map', None)
+        kwargs.pop("error_map", None)
 
         def get_long_running_output(pipeline_response):
-            deserialized = self._deserialize('TriggerSubscriptionOperationStatus', pipeline_response)
+            deserialized = self._deserialize("TriggerSubscriptionOperationStatus", pipeline_response)
             if cls:
-                return cls(pipeline_response, deserialized, {})
+                return cls(pipeline_response, deserialized, {})  # type: ignore
             return deserialized
 
-
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
 
         if polling is True:
-            polling_method = cast(AsyncPollingMethod, AsyncLROBasePolling(
-                lro_delay,
-                
-                path_format_arguments=path_format_arguments,
-                **kwargs
-        ))  # type: AsyncPollingMethod
-        elif polling is False: polling_method = cast(AsyncPollingMethod, AsyncNoPolling())
-        else: polling_method = polling
+            polling_method: AsyncPollingMethod = cast(
+                AsyncPollingMethod,
+                AsyncLROBasePolling(lro_delay, path_format_arguments=path_format_arguments, **kwargs),
+            )
+        elif polling is False:
+            polling_method = cast(AsyncPollingMethod, AsyncNoPolling())
+        else:
+            polling_method = polling
         if cont_token:
-            return AsyncLROPoller.from_continuation_token(
+            return AsyncLROPoller[_models.TriggerSubscriptionOperationStatus].from_continuation_token(
                 polling_method=polling_method,
                 continuation_token=cont_token,
                 client=self._client,
-                deserialization_callback=get_long_running_output
+                deserialization_callback=get_long_running_output,
             )
-        return AsyncLROPoller(self._client, raw_result, get_long_running_output, polling_method)
-
-    begin_subscribe_trigger_to_events.metadata = {'url': "/triggers/{triggerName}/subscribeToEvents"}  # type: ignore
+        return AsyncLROPoller[_models.TriggerSubscriptionOperationStatus](
+            self._client, raw_result, get_long_running_output, polling_method  # type: ignore
+        )
 
     @distributed_trace_async
     async def get_event_subscription_status(
-        self,
-        trigger_name: str,
-        **kwargs: Any
+        self, trigger_name: str, **kwargs: Any
     ) -> _models.TriggerSubscriptionOperationStatus:
         """Get a trigger's event subscription status.
 
-        :param trigger_name: The trigger name.
+        :param trigger_name: The trigger name. Required.
         :type trigger_name: str
-        :keyword api_version: Api Version. Default value is "2020-12-01". Note that overriding this
-         default value may result in unsupported behavior.
-        :paramtype api_version: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: TriggerSubscriptionOperationStatus, or the result of cls(response)
+        :return: TriggerSubscriptionOperationStatus or the result of cls(response)
         :rtype: ~azure.synapse.artifacts.models.TriggerSubscriptionOperationStatus
-        :raises: ~azure.core.exceptions.HttpResponseError
+        :raises ~azure.core.exceptions.HttpResponseError:
         """
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
+            304: ResourceNotModifiedError,
         }
-        error_map.update(kwargs.pop('error_map', {}) or {})
+        error_map.update(kwargs.pop("error_map", {}) or {})
 
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[_models.TriggerSubscriptionOperationStatus]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[_models.TriggerSubscriptionOperationStatus] = kwargs.pop("cls", None)
 
-        
-        request = build_get_event_subscription_status_request(
+        _request = build_get_event_subscription_status_request(
             trigger_name=trigger_name,
             api_version=api_version,
-            template_url=self.get_event_subscription_status.metadata['url'],
             headers=_headers,
             params=_params,
         )
-        request = _convert_request(request)
+        _request = _convert_request(_request)
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
-        request.url = self._client.format_url(request.url, **path_format_arguments)  # type: ignore
+        _request.url = self._client.format_url(_request.url, **path_format_arguments)
 
-        pipeline_response = await self._client._pipeline.run(  # type: ignore # pylint: disable=protected-access
-            request,
-            stream=False,
-            **kwargs
+        _stream = False
+        pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
+            _request, stream=_stream, **kwargs
         )
+
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.CloudError, pipeline_response)
-            raise HttpResponseError(response=response, model=error)
+            raise HttpResponseError(response=response)
 
-        deserialized = self._deserialize('TriggerSubscriptionOperationStatus', pipeline_response)
+        deserialized = self._deserialize("TriggerSubscriptionOperationStatus", pipeline_response)
 
         if cls:
-            return cls(pipeline_response, deserialized, {})
+            return cls(pipeline_response, deserialized, {})  # type: ignore
 
-        return deserialized
-
-    get_event_subscription_status.metadata = {'url': "/triggers/{triggerName}/getEventSubscriptionStatus"}  # type: ignore
-
+        return deserialized  # type: ignore
 
     async def _unsubscribe_trigger_from_events_initial(
-        self,
-        trigger_name: str,
-        **kwargs: Any
+        self, trigger_name: str, **kwargs: Any
     ) -> Optional[_models.TriggerSubscriptionOperationStatus]:
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
+            304: ResourceNotModifiedError,
         }
-        error_map.update(kwargs.pop('error_map', {}) or {})
+        error_map.update(kwargs.pop("error_map", {}) or {})
 
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[Optional[_models.TriggerSubscriptionOperationStatus]]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[Optional[_models.TriggerSubscriptionOperationStatus]] = kwargs.pop("cls", None)
 
-        
-        request = build_unsubscribe_trigger_from_events_request_initial(
+        _request = build_unsubscribe_trigger_from_events_request(
             trigger_name=trigger_name,
             api_version=api_version,
-            template_url=self._unsubscribe_trigger_from_events_initial.metadata['url'],
             headers=_headers,
             params=_params,
         )
-        request = _convert_request(request)
+        _request = _convert_request(_request)
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
-        request.url = self._client.format_url(request.url, **path_format_arguments)  # type: ignore
+        _request.url = self._client.format_url(_request.url, **path_format_arguments)
 
-        pipeline_response = await self._client._pipeline.run(  # type: ignore # pylint: disable=protected-access
-            request,
-            stream=False,
-            **kwargs
+        _stream = False
+        pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
+            _request, stream=_stream, **kwargs
         )
+
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
@@ -724,131 +636,110 @@ class TriggerOperations:
 
         deserialized = None
         if response.status_code == 200:
-            deserialized = self._deserialize('TriggerSubscriptionOperationStatus', pipeline_response)
+            deserialized = self._deserialize("TriggerSubscriptionOperationStatus", pipeline_response)
 
         if cls:
-            return cls(pipeline_response, deserialized, {})
+            return cls(pipeline_response, deserialized, {})  # type: ignore
 
-        return deserialized
-
-    _unsubscribe_trigger_from_events_initial.metadata = {'url': "/triggers/{triggerName}/unsubscribeFromEvents"}  # type: ignore
-
+        return deserialized  # type: ignore
 
     @distributed_trace_async
     async def begin_unsubscribe_trigger_from_events(
-        self,
-        trigger_name: str,
-        **kwargs: Any
+        self, trigger_name: str, **kwargs: Any
     ) -> AsyncLROPoller[_models.TriggerSubscriptionOperationStatus]:
         """Unsubscribe event trigger from events.
 
-        :param trigger_name: The trigger name.
+        :param trigger_name: The trigger name. Required.
         :type trigger_name: str
-        :keyword api_version: Api Version. Default value is "2020-12-01". Note that overriding this
-         default value may result in unsupported behavior.
-        :paramtype api_version: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :keyword str continuation_token: A continuation token to restart a poller from a saved state.
-        :keyword polling: By default, your polling method will be AsyncLROBasePolling. Pass in False
-         for this operation to not poll, or pass in your own initialized polling object for a personal
-         polling strategy.
-        :paramtype polling: bool or ~azure.core.polling.AsyncPollingMethod
-        :keyword int polling_interval: Default waiting time between two polls for LRO operations if no
-         Retry-After header is present.
         :return: An instance of AsyncLROPoller that returns either TriggerSubscriptionOperationStatus
          or the result of cls(response)
         :rtype:
          ~azure.core.polling.AsyncLROPoller[~azure.synapse.artifacts.models.TriggerSubscriptionOperationStatus]
-        :raises: ~azure.core.exceptions.HttpResponseError
+        :raises ~azure.core.exceptions.HttpResponseError:
         """
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[_models.TriggerSubscriptionOperationStatus]
-        polling = kwargs.pop('polling', True)  # type: Union[bool, AsyncPollingMethod]
-        lro_delay = kwargs.pop(
-            'polling_interval',
-            self._config.polling_interval
-        )
-        cont_token = kwargs.pop('continuation_token', None)  # type: Optional[str]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[_models.TriggerSubscriptionOperationStatus] = kwargs.pop("cls", None)
+        polling: Union[bool, AsyncPollingMethod] = kwargs.pop("polling", True)
+        lro_delay = kwargs.pop("polling_interval", self._config.polling_interval)
+        cont_token: Optional[str] = kwargs.pop("continuation_token", None)
         if cont_token is None:
-            raw_result = await self._unsubscribe_trigger_from_events_initial(  # type: ignore
+            raw_result = await self._unsubscribe_trigger_from_events_initial(
                 trigger_name=trigger_name,
                 api_version=api_version,
-                cls=lambda x,y,z: x,
+                cls=lambda x, y, z: x,
                 headers=_headers,
                 params=_params,
                 **kwargs
             )
-        kwargs.pop('error_map', None)
+        kwargs.pop("error_map", None)
 
         def get_long_running_output(pipeline_response):
-            deserialized = self._deserialize('TriggerSubscriptionOperationStatus', pipeline_response)
+            deserialized = self._deserialize("TriggerSubscriptionOperationStatus", pipeline_response)
             if cls:
-                return cls(pipeline_response, deserialized, {})
+                return cls(pipeline_response, deserialized, {})  # type: ignore
             return deserialized
 
-
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
 
         if polling is True:
-            polling_method = cast(AsyncPollingMethod, AsyncLROBasePolling(
-                lro_delay,
-                
-                path_format_arguments=path_format_arguments,
-                **kwargs
-        ))  # type: AsyncPollingMethod
-        elif polling is False: polling_method = cast(AsyncPollingMethod, AsyncNoPolling())
-        else: polling_method = polling
+            polling_method: AsyncPollingMethod = cast(
+                AsyncPollingMethod,
+                AsyncLROBasePolling(lro_delay, path_format_arguments=path_format_arguments, **kwargs),
+            )
+        elif polling is False:
+            polling_method = cast(AsyncPollingMethod, AsyncNoPolling())
+        else:
+            polling_method = polling
         if cont_token:
-            return AsyncLROPoller.from_continuation_token(
+            return AsyncLROPoller[_models.TriggerSubscriptionOperationStatus].from_continuation_token(
                 polling_method=polling_method,
                 continuation_token=cont_token,
                 client=self._client,
-                deserialization_callback=get_long_running_output
+                deserialization_callback=get_long_running_output,
             )
-        return AsyncLROPoller(self._client, raw_result, get_long_running_output, polling_method)
-
-    begin_unsubscribe_trigger_from_events.metadata = {'url': "/triggers/{triggerName}/unsubscribeFromEvents"}  # type: ignore
+        return AsyncLROPoller[_models.TriggerSubscriptionOperationStatus](
+            self._client, raw_result, get_long_running_output, polling_method  # type: ignore
+        )
 
     async def _start_trigger_initial(  # pylint: disable=inconsistent-return-statements
-        self,
-        trigger_name: str,
-        **kwargs: Any
+        self, trigger_name: str, **kwargs: Any
     ) -> None:
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
+            304: ResourceNotModifiedError,
         }
-        error_map.update(kwargs.pop('error_map', {}) or {})
+        error_map.update(kwargs.pop("error_map", {}) or {})
 
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[None]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[None] = kwargs.pop("cls", None)
 
-        
-        request = build_start_trigger_request_initial(
+        _request = build_start_trigger_request(
             trigger_name=trigger_name,
             api_version=api_version,
-            template_url=self._start_trigger_initial.metadata['url'],
             headers=_headers,
             params=_params,
         )
-        request = _convert_request(request)
+        _request = _convert_request(_request)
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
-        request.url = self._client.format_url(request.url, **path_format_arguments)  # type: ignore
+        _request.url = self._client.format_url(_request.url, **path_format_arguments)
 
-        pipeline_response = await self._client._pipeline.run(  # type: ignore # pylint: disable=protected-access
-            request,
-            stream=False,
-            **kwargs
+        _stream = False
+        pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
+            _request, stream=_stream, **kwargs
         )
+
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
@@ -856,122 +747,97 @@ class TriggerOperations:
             raise HttpResponseError(response=response)
 
         if cls:
-            return cls(pipeline_response, None, {})
-
-    _start_trigger_initial.metadata = {'url': "/triggers/{triggerName}/start"}  # type: ignore
-
+            return cls(pipeline_response, None, {})  # type: ignore
 
     @distributed_trace_async
-    async def begin_start_trigger(  # pylint: disable=inconsistent-return-statements
-        self,
-        trigger_name: str,
-        **kwargs: Any
-    ) -> AsyncLROPoller[None]:
+    async def begin_start_trigger(self, trigger_name: str, **kwargs: Any) -> AsyncLROPoller[None]:
         """Starts a trigger.
 
-        :param trigger_name: The trigger name.
+        :param trigger_name: The trigger name. Required.
         :type trigger_name: str
-        :keyword api_version: Api Version. Default value is "2020-12-01". Note that overriding this
-         default value may result in unsupported behavior.
-        :paramtype api_version: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :keyword str continuation_token: A continuation token to restart a poller from a saved state.
-        :keyword polling: By default, your polling method will be AsyncLROBasePolling. Pass in False
-         for this operation to not poll, or pass in your own initialized polling object for a personal
-         polling strategy.
-        :paramtype polling: bool or ~azure.core.polling.AsyncPollingMethod
-        :keyword int polling_interval: Default waiting time between two polls for LRO operations if no
-         Retry-After header is present.
         :return: An instance of AsyncLROPoller that returns either None or the result of cls(response)
         :rtype: ~azure.core.polling.AsyncLROPoller[None]
-        :raises: ~azure.core.exceptions.HttpResponseError
+        :raises ~azure.core.exceptions.HttpResponseError:
         """
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        polling = kwargs.pop('polling', True)  # type: Union[bool, AsyncPollingMethod]
-        lro_delay = kwargs.pop(
-            'polling_interval',
-            self._config.polling_interval
-        )
-        cont_token = kwargs.pop('continuation_token', None)  # type: Optional[str]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[None] = kwargs.pop("cls", None)
+        polling: Union[bool, AsyncPollingMethod] = kwargs.pop("polling", True)
+        lro_delay = kwargs.pop("polling_interval", self._config.polling_interval)
+        cont_token: Optional[str] = kwargs.pop("continuation_token", None)
         if cont_token is None:
             raw_result = await self._start_trigger_initial(  # type: ignore
                 trigger_name=trigger_name,
                 api_version=api_version,
-                cls=lambda x,y,z: x,
+                cls=lambda x, y, z: x,
                 headers=_headers,
                 params=_params,
                 **kwargs
             )
-        kwargs.pop('error_map', None)
+        kwargs.pop("error_map", None)
 
-        def get_long_running_output(pipeline_response):
+        def get_long_running_output(pipeline_response):  # pylint: disable=inconsistent-return-statements
             if cls:
-                return cls(pipeline_response, None, {})
-
+                return cls(pipeline_response, None, {})  # type: ignore
 
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
 
         if polling is True:
-            polling_method = cast(AsyncPollingMethod, AsyncLROBasePolling(
-                lro_delay,
-                
-                path_format_arguments=path_format_arguments,
-                **kwargs
-        ))  # type: AsyncPollingMethod
-        elif polling is False: polling_method = cast(AsyncPollingMethod, AsyncNoPolling())
-        else: polling_method = polling
+            polling_method: AsyncPollingMethod = cast(
+                AsyncPollingMethod,
+                AsyncLROBasePolling(lro_delay, path_format_arguments=path_format_arguments, **kwargs),
+            )
+        elif polling is False:
+            polling_method = cast(AsyncPollingMethod, AsyncNoPolling())
+        else:
+            polling_method = polling
         if cont_token:
-            return AsyncLROPoller.from_continuation_token(
+            return AsyncLROPoller[None].from_continuation_token(
                 polling_method=polling_method,
                 continuation_token=cont_token,
                 client=self._client,
-                deserialization_callback=get_long_running_output
+                deserialization_callback=get_long_running_output,
             )
-        return AsyncLROPoller(self._client, raw_result, get_long_running_output, polling_method)
-
-    begin_start_trigger.metadata = {'url': "/triggers/{triggerName}/start"}  # type: ignore
+        return AsyncLROPoller[None](self._client, raw_result, get_long_running_output, polling_method)  # type: ignore
 
     async def _stop_trigger_initial(  # pylint: disable=inconsistent-return-statements
-        self,
-        trigger_name: str,
-        **kwargs: Any
+        self, trigger_name: str, **kwargs: Any
     ) -> None:
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
+            304: ResourceNotModifiedError,
         }
-        error_map.update(kwargs.pop('error_map', {}) or {})
+        error_map.update(kwargs.pop("error_map", {}) or {})
 
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[None]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[None] = kwargs.pop("cls", None)
 
-        
-        request = build_stop_trigger_request_initial(
+        _request = build_stop_trigger_request(
             trigger_name=trigger_name,
             api_version=api_version,
-            template_url=self._stop_trigger_initial.metadata['url'],
             headers=_headers,
             params=_params,
         )
-        request = _convert_request(request)
+        _request = _convert_request(_request)
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
-        request.url = self._client.format_url(request.url, **path_format_arguments)  # type: ignore
+        _request.url = self._client.format_url(_request.url, **path_format_arguments)
 
-        pipeline_response = await self._client._pipeline.run(  # type: ignore # pylint: disable=protected-access
-            request,
-            stream=False,
-            **kwargs
+        _stream = False
+        pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
+            _request, stream=_stream, **kwargs
         )
+
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
@@ -979,83 +845,59 @@ class TriggerOperations:
             raise HttpResponseError(response=response)
 
         if cls:
-            return cls(pipeline_response, None, {})
-
-    _stop_trigger_initial.metadata = {'url': "/triggers/{triggerName}/stop"}  # type: ignore
-
+            return cls(pipeline_response, None, {})  # type: ignore
 
     @distributed_trace_async
-    async def begin_stop_trigger(  # pylint: disable=inconsistent-return-statements
-        self,
-        trigger_name: str,
-        **kwargs: Any
-    ) -> AsyncLROPoller[None]:
+    async def begin_stop_trigger(self, trigger_name: str, **kwargs: Any) -> AsyncLROPoller[None]:
         """Stops a trigger.
 
-        :param trigger_name: The trigger name.
+        :param trigger_name: The trigger name. Required.
         :type trigger_name: str
-        :keyword api_version: Api Version. Default value is "2020-12-01". Note that overriding this
-         default value may result in unsupported behavior.
-        :paramtype api_version: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :keyword str continuation_token: A continuation token to restart a poller from a saved state.
-        :keyword polling: By default, your polling method will be AsyncLROBasePolling. Pass in False
-         for this operation to not poll, or pass in your own initialized polling object for a personal
-         polling strategy.
-        :paramtype polling: bool or ~azure.core.polling.AsyncPollingMethod
-        :keyword int polling_interval: Default waiting time between two polls for LRO operations if no
-         Retry-After header is present.
         :return: An instance of AsyncLROPoller that returns either None or the result of cls(response)
         :rtype: ~azure.core.polling.AsyncLROPoller[None]
-        :raises: ~azure.core.exceptions.HttpResponseError
+        :raises ~azure.core.exceptions.HttpResponseError:
         """
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2020-12-01"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        polling = kwargs.pop('polling', True)  # type: Union[bool, AsyncPollingMethod]
-        lro_delay = kwargs.pop(
-            'polling_interval',
-            self._config.polling_interval
-        )
-        cont_token = kwargs.pop('continuation_token', None)  # type: Optional[str]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2020-12-01"))
+        cls: ClsType[None] = kwargs.pop("cls", None)
+        polling: Union[bool, AsyncPollingMethod] = kwargs.pop("polling", True)
+        lro_delay = kwargs.pop("polling_interval", self._config.polling_interval)
+        cont_token: Optional[str] = kwargs.pop("continuation_token", None)
         if cont_token is None:
             raw_result = await self._stop_trigger_initial(  # type: ignore
                 trigger_name=trigger_name,
                 api_version=api_version,
-                cls=lambda x,y,z: x,
+                cls=lambda x, y, z: x,
                 headers=_headers,
                 params=_params,
                 **kwargs
             )
-        kwargs.pop('error_map', None)
+        kwargs.pop("error_map", None)
 
-        def get_long_running_output(pipeline_response):
+        def get_long_running_output(pipeline_response):  # pylint: disable=inconsistent-return-statements
             if cls:
-                return cls(pipeline_response, None, {})
-
+                return cls(pipeline_response, None, {})  # type: ignore
 
         path_format_arguments = {
-            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+            "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, "str", skip_quote=True),
         }
 
         if polling is True:
-            polling_method = cast(AsyncPollingMethod, AsyncLROBasePolling(
-                lro_delay,
-                
-                path_format_arguments=path_format_arguments,
-                **kwargs
-        ))  # type: AsyncPollingMethod
-        elif polling is False: polling_method = cast(AsyncPollingMethod, AsyncNoPolling())
-        else: polling_method = polling
+            polling_method: AsyncPollingMethod = cast(
+                AsyncPollingMethod,
+                AsyncLROBasePolling(lro_delay, path_format_arguments=path_format_arguments, **kwargs),
+            )
+        elif polling is False:
+            polling_method = cast(AsyncPollingMethod, AsyncNoPolling())
+        else:
+            polling_method = polling
         if cont_token:
-            return AsyncLROPoller.from_continuation_token(
+            return AsyncLROPoller[None].from_continuation_token(
                 polling_method=polling_method,
                 continuation_token=cont_token,
                 client=self._client,
-                deserialization_callback=get_long_running_output
+                deserialization_callback=get_long_running_output,
             )
-        return AsyncLROPoller(self._client, raw_result, get_long_running_output, polling_method)
-
-    begin_stop_trigger.metadata = {'url': "/triggers/{triggerName}/stop"}  # type: ignore
+        return AsyncLROPoller[None](self._client, raw_result, get_long_running_output, polling_method)  # type: ignore

@@ -10,18 +10,19 @@
 # --------------------------------------------------------------------------
 
 from typing import Any, Optional, TYPE_CHECKING
+from typing_extensions import Self
 
-from msrest import Deserializer, Serializer
-
+from azure.core.pipeline import policies
 from azure.mgmt.core import AsyncARMPipelineClient
+from azure.mgmt.core.policies import AsyncARMAutoResourceProviderRegistrationPolicy
 from azure.profiles import KnownProfiles, ProfileDefinition
 from azure.profiles.multiapiclient import MultiApiClientMixin
 
+from .._serialization import Deserializer, Serializer
 from ._configuration import TemplateSpecsClientConfiguration
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
-    from azure.core.credentials import TokenCredential
     from azure.core.credentials_async import AsyncTokenCredential
 
 class _SDKClient(object):
@@ -42,9 +43,9 @@ class TemplateSpecsClient(MultiApiClientMixin, _SDKClient):
     The api-version parameter sets the default API version if the operation
     group is not described in the profile.
 
-    :param credential: Credential needed for the client to connect to Azure.
+    :param credential: Credential needed for the client to connect to Azure. Required.
     :type credential: ~azure.core.credentials_async.AsyncTokenCredential
-    :param subscription_id: Subscription Id which forms part of the URI for every service call.
+    :param subscription_id: Subscription Id which forms part of the URI for every service call. Required.
     :type subscription_id: str
     :param api_version: API version to use if no profile is provided, or if missing in profile.
     :type api_version: str
@@ -70,10 +71,30 @@ class TemplateSpecsClient(MultiApiClientMixin, _SDKClient):
         api_version: Optional[str] = None,
         base_url: str = "https://management.azure.com",
         profile: KnownProfiles = KnownProfiles.default,
-        **kwargs  # type: Any
+        **kwargs: Any
     ) -> None:
+        if api_version:
+            kwargs.setdefault('api_version', api_version)
         self._config = TemplateSpecsClientConfiguration(credential, subscription_id, **kwargs)
-        self._client = AsyncARMPipelineClient(base_url=base_url, config=self._config, **kwargs)
+        _policies = kwargs.pop("policies", None)
+        if _policies is None:
+            _policies = [
+                policies.RequestIdPolicy(**kwargs),
+                self._config.headers_policy,
+                self._config.user_agent_policy,
+                self._config.proxy_policy,
+                policies.ContentDecodePolicy(**kwargs),
+                AsyncARMAutoResourceProviderRegistrationPolicy(),
+                self._config.redirect_policy,
+                self._config.retry_policy,
+                self._config.authentication_policy,
+                self._config.custom_hook_policy,
+                self._config.logging_policy,
+                policies.DistributedTracingPolicy(**kwargs),
+                policies.SensitiveHeaderCleanupPolicy(**kwargs) if self._config.redirect_policy else None,
+                self._config.http_logging_policy,
+            ]
+        self._client = AsyncARMPipelineClient(base_url=base_url, policies=_policies, **kwargs)
         super(TemplateSpecsClient, self).__init__(
             api_version=api_version,
             profile=profile
@@ -126,7 +147,8 @@ class TemplateSpecsClient(MultiApiClientMixin, _SDKClient):
             from ..v2022_02_01.aio.operations import TemplateSpecVersionsOperations as OperationClass
         else:
             raise ValueError("API version {} does not have operation group 'template_spec_versions'".format(api_version))
-        return OperationClass(self._client, self._config, Serializer(self._models_dict(api_version)), Deserializer(self._models_dict(api_version)))
+        self._config.api_version = api_version
+        return OperationClass(self._client, self._config, Serializer(self._models_dict(api_version)), Deserializer(self._models_dict(api_version)), api_version)
 
     @property
     def template_specs(self):
@@ -148,7 +170,8 @@ class TemplateSpecsClient(MultiApiClientMixin, _SDKClient):
             from ..v2022_02_01.aio.operations import TemplateSpecsOperations as OperationClass
         else:
             raise ValueError("API version {} does not have operation group 'template_specs'".format(api_version))
-        return OperationClass(self._client, self._config, Serializer(self._models_dict(api_version)), Deserializer(self._models_dict(api_version)))
+        self._config.api_version = api_version
+        return OperationClass(self._client, self._config, Serializer(self._models_dict(api_version)), Deserializer(self._models_dict(api_version)), api_version)
 
     async def close(self):
         await self._client.close()

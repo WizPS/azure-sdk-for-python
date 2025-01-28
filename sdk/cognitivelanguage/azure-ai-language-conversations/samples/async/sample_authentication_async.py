@@ -14,7 +14,7 @@ DESCRIPTION:
     azure-identity client library.
 
     See more details about authentication here:
-    https://docs.microsoft.com/azure/cognitive-services/authentication
+    https://learn.microsoft.com/azure/cognitive-services/authentication
 
     Note: the endpoint must be formatted to use the custom domain name for your resource:
     https://<NAME-OF-YOUR-RESOURCE>.cognitiveservices.azure.com/
@@ -62,5 +62,4 @@ async def main():
     await sample_authentication_with_azure_active_directory()
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    asyncio.run(main())

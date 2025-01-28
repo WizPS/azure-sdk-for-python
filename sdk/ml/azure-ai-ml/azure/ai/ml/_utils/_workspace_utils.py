@@ -2,15 +2,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import uuid
-import random
 import logging
+import random
+import uuid
 
+from azure.ai.ml._azure_environments import _get_base_url_from_metadata, _resource_to_scopes
 from azure.ai.ml._vendor.azure_resources._resource_management_client import ResourceManagementClient
-from azure.ai.ml.constants import ArmConstants
-from azure.identity import ChainedTokenCredential
-from azure.ai.ml._azure_environments import _get_base_url_from_metadata
-
+from azure.ai.ml._vendor.azure_resources.models import GenericResource
+from azure.ai.ml.constants._common import ArmConstants
+from azure.core.credentials import TokenCredential
 
 module_logger = logging.getLogger(__name__)
 
@@ -30,34 +30,62 @@ def get_deployment_name(name: str):
     return f"{name}-{random.randint(1, 10000000)}"
 
 
-def get_resource_group_location(
-    credentials: ChainedTokenCredential, subscription_id: str, resource_group_name: str
-) -> str:
+def get_resource_group_location(credentials: TokenCredential, subscription_id: str, resource_group_name: str) -> str:
+    arm_hostname = _get_base_url_from_metadata()
     client = ResourceManagementClient(
         credential=credentials,
         subscription_id=subscription_id,
-        base_url=_get_base_url_from_metadata(),
+        base_url=arm_hostname,
         api_version=ArmConstants.AZURE_MGMT_RESOURCE_API_VERSION,
+        credential_scopes=_resource_to_scopes(arm_hostname),
     )
     rg = client.resource_groups.get(resource_group_name)
     return rg.location
 
 
-def delete_resource_by_arm_id(
-    credentials: ChainedTokenCredential, subscription_id: str, arm_id: str, api_version: str
-) -> None:
+def get_generic_arm_resource_by_arm_id(
+    credentials: TokenCredential,
+    subscription_id: str,
+    arm_id: str,
+    api_version: str,
+) -> GenericResource:
     if arm_id:
+        arm_hostname = _get_base_url_from_metadata()
         client = ResourceManagementClient(
             credential=credentials,
             subscription_id=subscription_id,
-            base_url=_get_base_url_from_metadata(),
+            base_url=arm_hostname,
             api_version=ArmConstants.AZURE_MGMT_RESOURCE_API_VERSION,
+            credential_scopes=_resource_to_scopes(arm_hostname),
+        )
+        return client.resources.get_by_id(arm_id, api_version)
+    return None
+
+
+def delete_resource_by_arm_id(
+    credentials: TokenCredential,
+    subscription_id: str,
+    arm_id: str,
+    api_version: str,
+) -> None:
+    if arm_id:
+        arm_hostname = _get_base_url_from_metadata()
+        client = ResourceManagementClient(
+            credential=credentials,
+            subscription_id=subscription_id,
+            base_url=arm_hostname,
+            api_version=ArmConstants.AZURE_MGMT_RESOURCE_API_VERSION,
+            credential_scopes=_resource_to_scopes(arm_hostname),
         )
         client.resources.begin_delete_by_id(arm_id, api_version)
 
 
 def get_resource_and_group_name(armstr: str) -> str:
     return armstr.split("/")[-1], armstr.split("/")[-5]
+
+
+def get_sub_id_resource_and_group_name(armstr: str) -> str:
+    return armstr.split("/")[-7], armstr.split("/")[-1], armstr.split("/")[-5]
 
 
 def get_endpoint_parts(arm_id: str, subnet_arm_id: str) -> ():

@@ -9,7 +9,13 @@ import functools
 from typing import TYPE_CHECKING
 import warnings
 
-from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import (
+    ClientAuthenticationError,
+    HttpResponseError,
+    ResourceExistsError,
+    ResourceNotFoundError,
+    map_error,
+)
 from azure.core.paging import ItemPaged
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import HttpResponse
@@ -26,7 +32,8 @@ from .._vendor import _convert_request, _format_url_section
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
     from typing import Any, Callable, Dict, Generic, Iterable, Optional, TypeVar, Union
-    T = TypeVar('T')
+
+    T = TypeVar("T")
     ClsType = Optional[Callable[[PipelineResponse[HttpRequest, HttpResponse], T, Dict[str, Any]], Any]]
 
 _SERIALIZER = Serializer()
@@ -179,7 +186,7 @@ def build_create_or_update_request_initial(
     # Construct URL
     url = kwargs.pop("template_url", '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}/versions/{version}')
     path_format_arguments = {
-        "name": _SERIALIZER.url("name", name, 'str', pattern=r'^[a-zA-Z0-9][a-zA-Z0-9\-_]{0,254}$'),
+        "name": _SERIALIZER.url("name", name, 'str', pattern=r'^(?![\-_.])[a-zA-Z0-9\-_.]{1,255}(?<!\.)$'),
         "version": _SERIALIZER.url("version", version, 'str'),
         "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str', min_length=1),
         "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str', max_length=90, min_length=1),
@@ -249,7 +256,7 @@ class CodeVersionsOperations(object):
         :type name: str
         :param resource_group_name: The name of the resource group. The name is case insensitive.
         :type resource_group_name: str
-        :param registry_name:
+        :param registry_name: Name of Azure Machine Learning registry.
         :type registry_name: str
         :param order_by: Ordering of list.
         :type order_by: str
@@ -267,16 +274,15 @@ class CodeVersionsOperations(object):
          ~azure.core.paging.ItemPaged[~azure.mgmt.machinelearningservices.models.CodeVersionResourceArmPaginatedResult]
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        api_version = kwargs.pop('api_version', "2021-10-01-dataplanepreview")  # type: str
+        api_version = kwargs.pop("api_version", "2021-10-01-dataplanepreview")  # type: str
 
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.CodeVersionResourceArmPaginatedResult"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.CodeVersionResourceArmPaginatedResult"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
+
         def prepare_request(next_link=None):
             if not next_link:
-                
+
                 request = build_list_request(
                     name=name,
                     subscription_id=self._config.subscription_id,
@@ -286,13 +292,13 @@ class CodeVersionsOperations(object):
                     order_by=order_by,
                     top=top,
                     skiptoken=skiptoken,
-                    template_url=self.list.metadata['url'],
+                    template_url=self.list.metadata["url"],
                 )
                 request = _convert_request(request)
                 request.url = self._client.format_url(request.url)
 
             else:
-                
+
                 request = build_list_request(
                     name=name,
                     subscription_id=self._config.subscription_id,
@@ -329,11 +335,9 @@ class CodeVersionsOperations(object):
 
             return pipeline_response
 
+        return ItemPaged(get_next, extract_data)
 
-        return ItemPaged(
-            get_next, extract_data
-        )
-    list.metadata = {'url': '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}/versions'}  # type: ignore
+    list.metadata = {"url": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}/versions"}  # type: ignore
 
     @distributed_trace
     def delete(
@@ -355,7 +359,7 @@ class CodeVersionsOperations(object):
         :type version: str
         :param resource_group_name: The name of the resource group. The name is case insensitive.
         :type resource_group_name: str
-        :param registry_name:
+        :param registry_name: Name of Azure Machine Learning registry.
         :type registry_name: str
         :keyword api_version: Api Version. The default value is "2021-10-01-dataplanepreview". Note
          that overriding this default value may result in unsupported behavior.
@@ -365,15 +369,12 @@ class CodeVersionsOperations(object):
         :rtype: None
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType[None]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        api_version = kwargs.pop('api_version', "2021-10-01-dataplanepreview")  # type: str
+        api_version = kwargs.pop("api_version", "2021-10-01-dataplanepreview")  # type: str
 
-        
         request = build_delete_request(
             name=name,
             version=version,
@@ -381,7 +382,7 @@ class CodeVersionsOperations(object):
             resource_group_name=resource_group_name,
             registry_name=registry_name,
             api_version=api_version,
-            template_url=self.delete.metadata['url'],
+            template_url=self.delete.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -397,8 +398,7 @@ class CodeVersionsOperations(object):
         if cls:
             return cls(pipeline_response, None, {})
 
-    delete.metadata = {'url': '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}/versions/{version}'}  # type: ignore
-
+    delete.metadata = {"url": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}/versions/{version}"}  # type: ignore
 
     @distributed_trace
     def get(
@@ -420,7 +420,7 @@ class CodeVersionsOperations(object):
         :type version: str
         :param resource_group_name: The name of the resource group. The name is case insensitive.
         :type resource_group_name: str
-        :param registry_name:
+        :param registry_name: Name of Azure Machine Learning registry.
         :type registry_name: str
         :keyword api_version: Api Version. The default value is "2021-10-01-dataplanepreview". Note
          that overriding this default value may result in unsupported behavior.
@@ -430,15 +430,12 @@ class CodeVersionsOperations(object):
         :rtype: ~azure.mgmt.machinelearningservices.models.CodeVersionData
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.CodeVersionData"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.CodeVersionData"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        api_version = kwargs.pop('api_version', "2021-10-01-dataplanepreview")  # type: str
+        api_version = kwargs.pop("api_version", "2021-10-01-dataplanepreview")  # type: str
 
-        
         request = build_get_request(
             name=name,
             version=version,
@@ -446,7 +443,7 @@ class CodeVersionsOperations(object):
             resource_group_name=resource_group_name,
             registry_name=registry_name,
             api_version=api_version,
-            template_url=self.get.metadata['url'],
+            template_url=self.get.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -459,15 +456,14 @@ class CodeVersionsOperations(object):
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error, error_format=ARMErrorFormat)
 
-        deserialized = self._deserialize('CodeVersionData', pipeline_response)
+        deserialized = self._deserialize("CodeVersionData", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get.metadata = {'url': '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}/versions/{version}'}  # type: ignore
-
+    get.metadata = {"url": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}/versions/{version}"}  # type: ignore
 
     def _create_or_update_initial(
         self,
@@ -479,16 +475,14 @@ class CodeVersionsOperations(object):
         **kwargs  # type: Any
     ):
         # type: (...) -> None
-        cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType[None]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        api_version = kwargs.pop('api_version', "2021-10-01-dataplanepreview")  # type: str
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+        api_version = kwargs.pop("api_version", "2021-10-01-dataplanepreview")  # type: str
+        content_type = kwargs.pop("content_type", "application/json")  # type: Optional[str]
 
-        _json = self._serialize.body(body, 'CodeVersionData')
+        _json = self._serialize.body(body, "CodeVersionData")
 
         request = build_create_or_update_request_initial(
             name=name,
@@ -499,7 +493,7 @@ class CodeVersionsOperations(object):
             api_version=api_version,
             content_type=content_type,
             json=_json,
-            template_url=self._create_or_update_initial.metadata['url'],
+            template_url=self._create_or_update_initial.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -512,16 +506,16 @@ class CodeVersionsOperations(object):
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
         response_headers = {}
-        response_headers['x-ms-async-operation-timeout']=self._deserialize('duration', response.headers.get('x-ms-async-operation-timeout'))
-        response_headers['Location']=self._deserialize('str', response.headers.get('Location'))
-        response_headers['Retry-After']=self._deserialize('int', response.headers.get('Retry-After'))
-
+        response_headers["x-ms-async-operation-timeout"] = self._deserialize(
+            "duration", response.headers.get("x-ms-async-operation-timeout")
+        )
+        response_headers["Location"] = self._deserialize("str", response.headers.get("Location"))
+        response_headers["Retry-After"] = self._deserialize("int", response.headers.get("Retry-After"))
 
         if cls:
             return cls(pipeline_response, None, response_headers)
 
-    _create_or_update_initial.metadata = {'url': '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}/versions/{version}'}  # type: ignore
-
+    _create_or_update_initial.metadata = {"url": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}/versions/{version}"}  # type: ignore
 
     @distributed_trace
     def begin_create_or_update(
@@ -544,7 +538,7 @@ class CodeVersionsOperations(object):
         :type version: str
         :param resource_group_name: The name of the resource group. The name is case insensitive.
         :type resource_group_name: str
-        :param registry_name:
+        :param registry_name: Name of Azure Machine Learning registry.
         :type registry_name: str
         :param body: Version entity to create or update.
         :type body: ~azure.mgmt.machinelearningservices.models.CodeVersionData
@@ -563,15 +557,12 @@ class CodeVersionsOperations(object):
         :rtype: ~azure.core.polling.LROPoller[None]
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        api_version = kwargs.pop('api_version', "2021-10-01-dataplanepreview")  # type: str
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
-        polling = kwargs.pop('polling', True)  # type: Union[bool, azure.core.polling.PollingMethod]
-        cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        lro_delay = kwargs.pop(
-            'polling_interval',
-            self._config.polling_interval
-        )
-        cont_token = kwargs.pop('continuation_token', None)  # type: Optional[str]
+        api_version = kwargs.pop("api_version", "2021-10-01-dataplanepreview")  # type: str
+        content_type = kwargs.pop("content_type", "application/json")  # type: Optional[str]
+        polling = kwargs.pop("polling", True)  # type: Union[bool, azure.core.polling.PollingMethod]
+        cls = kwargs.pop("cls", None)  # type: ClsType[None]
+        lro_delay = kwargs.pop("polling_interval", self._config.polling_interval)
+        cont_token = kwargs.pop("continuation_token", None)  # type: Optional[str]
         if cont_token is None:
             raw_result = self._create_or_update_initial(
                 name=name,
@@ -581,27 +572,29 @@ class CodeVersionsOperations(object):
                 body=body,
                 api_version=api_version,
                 content_type=content_type,
-                cls=lambda x,y,z: x,
+                cls=lambda x, y, z: x,
                 **kwargs
             )
-        kwargs.pop('error_map', None)
+        kwargs.pop("error_map", None)
 
         def get_long_running_output(pipeline_response):
             if cls:
                 return cls(pipeline_response, None, {})
 
-
-        if polling is True: polling_method = ARMPolling(lro_delay, **kwargs)
-        elif polling is False: polling_method = NoPolling()
-        else: polling_method = polling
+        if polling is True:
+            polling_method = ARMPolling(lro_delay, **kwargs)
+        elif polling is False:
+            polling_method = NoPolling()
+        else:
+            polling_method = polling
         if cont_token:
             return LROPoller.from_continuation_token(
                 polling_method=polling_method,
                 continuation_token=cont_token,
                 client=self._client,
-                deserialization_callback=get_long_running_output
+                deserialization_callback=get_long_running_output,
             )
         else:
             return LROPoller(self._client, raw_result, get_long_running_output, polling_method)
 
-    begin_create_or_update.metadata = {'url': '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}/versions/{version}'}  # type: ignore
+    begin_create_or_update.metadata = {"url": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}/versions/{version}"}  # type: ignore

@@ -2,16 +2,43 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import functools
 import logging
-import yaml
-from collections import OrderedDict
-from typing import Any, Callable, Optional, cast, Dict, TypeVar
-from azure.ai.ml._ml_exceptions import ValidationException, ErrorCategory, ErrorTarget
+from typing import Callable, Dict, Optional, TypeVar, cast
 
+from azure.ai.ml.exceptions import ErrorCategory, ErrorTarget, ValidationErrorType, ValidationException
 
 T = TypeVar("T")
 module_logger = logging.getLogger(__name__)
+
+
+class OperationConfig(object):
+    """This class is used to store common configurations that are shared across operation objects of an MLClient object.
+
+    :param object: _description_
+    :type object: _type_
+    """
+
+    def __init__(self, show_progress: bool, enable_telemetry: bool) -> None:
+        self._show_progress = show_progress
+        self._enable_telemetry = enable_telemetry
+
+    @property
+    def show_progress(self) -> bool:
+        """Decide wether to display progress bars for long running operations.
+
+        :return: show_progress
+        :rtype: bool
+        """
+        return self._show_progress
+
+    @property
+    def enable_telemetry(self) -> bool:
+        """Decide whether to enable telemetry for Jupyter Notebooks - telemetry cannot be enabled for other contexts.
+
+        :return: enable_telemetry
+        :rtype: bool
+        """
+        return self._enable_telemetry
 
 
 class OperationScope(object):
@@ -21,11 +48,15 @@ class OperationScope(object):
         resource_group_name: str,
         workspace_name: Optional[str],
         registry_name: Optional[str] = None,
+        workspace_id: Optional[str] = None,
+        workspace_location: Optional[str] = None,
     ):
         self._subscription_id = subscription_id
         self._resource_group_name = resource_group_name
         self._workspace_name = workspace_name
         self._registry_name = registry_name
+        self._workspace_id = workspace_id
+        self._workspace_location = workspace_location
 
     @property
     def subscription_id(self) -> str:
@@ -39,58 +70,28 @@ class OperationScope(object):
     def workspace_name(self) -> Optional[str]:
         return self._workspace_name
 
-    @property
-    def registry_name(self) -> Optional[str]:
-        return self._registry_name
-
     @workspace_name.setter
     def workspace_name(self, value: str) -> None:
         self._workspace_name = value
+
+    @property
+    def registry_name(self) -> Optional[str]:
+        return self._registry_name
 
     @registry_name.setter
     def registry_name(self, value: str) -> None:
         self._registry_name = value
 
 
-def workspace_none_check(func: Callable[..., Any]) -> Callable[..., Any]:
-    @functools.wraps(func)  # This is to preserve metadata of func
-    def new_function(self: Any, *args: Any, **kwargs: Any) -> Any:
-        if not self._operation_scope.workspace_name:
-            msg = "Please set the default workspace with MLClient."
-            raise ValidationException(
-                message=msg,
-                target=ErrorTarget.GENERAL,
-                no_personal_data_message=msg,
-                error_category=ErrorCategory.USER_ERROR,
-            )
-        return func(self, *args, **kwargs)
-
-    return new_function
-
-
 class _ScopeDependentOperations(object):
-    def __init__(self, operation_scope: OperationScope):
+    def __init__(self, operation_scope: OperationScope, operation_config: OperationConfig):
         self._operation_scope = operation_scope
-        self._scope_kwargs = {
+        self._operation_config = operation_config
+        self._scope_kwargs: Dict = {
             "resource_group_name": self._operation_scope.resource_group_name,
         }
-        # Marshmallow supports load/dump of ordered dicts, but pollutes the yaml to tag dicts as ordered dicts
-        # Setting these load/dump functions make ordered dict the default in place of dict, allowing for clean yaml
-        _mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
-
-        def dict_representer(dumper: yaml.Dumper, data) -> yaml.representer.Representer:  # type: ignore
-            return dumper.represent_mapping(_mapping_tag, data.items())
-
-        def dict_constructor(loader, node) -> OrderedDict:  # type: ignore
-            loader.flatten_mapping(node)
-            return OrderedDict(loader.construct_pairs(node))
-
-        # setup yaml to load and dump in order
-        yaml.add_representer(OrderedDict, dict_representer)
-        yaml.add_constructor(_mapping_tag, dict_constructor, Loader=yaml.SafeLoader)
 
     @property  # type: ignore
-    @workspace_none_check
     def _workspace_name(self) -> str:
         return cast(str, self._operation_scope.workspace_name)
 
@@ -106,13 +107,21 @@ class _ScopeDependentOperations(object):
     def _resource_group_name(self) -> str:
         return self._operation_scope.resource_group_name
 
+    @property
+    def _show_progress(self) -> bool:
+        return self._operation_config.show_progress
+
+    @property
+    def _enable_telemetry(self) -> bool:
+        return self._operation_config.enable_telemetry
+
 
 class OperationsContainer(object):
     def __init__(self):
         self._all_operations = {}
 
     @property
-    def all_operations(self) -> Dict[str, _ScopeDependentOperations]:
+    def all_operations(self) -> Dict:
         return self._all_operations
 
     def add(self, name: str, operation: _ScopeDependentOperations) -> None:
@@ -125,19 +134,19 @@ class OperationsContainer(object):
 
             if isinstance(operation, MagicMock) or type_check(operation):
                 return operation
-            else:
-                msg = f"{resource_type} operations are initialized with wrong type: {type(operation)}."
-                raise ValidationException(
-                    message=msg,
-                    no_personal_data_message=msg,
-                    error_category=ErrorCategory.USER_ERROR,
-                    target=ErrorTarget.JOB,
-                )
-        else:
-            msg = f"Operation {resource_type} is not available for this client."
+            msg = f"{resource_type} operations are initialized with wrong type: {type(operation)}."
             raise ValidationException(
                 message=msg,
                 no_personal_data_message=msg,
                 error_category=ErrorCategory.USER_ERROR,
                 target=ErrorTarget.JOB,
+                error_type=ValidationErrorType.INVALID_VALUE,
             )
+        msg = f"Operation {resource_type} is not available for this client."
+        raise ValidationException(
+            message=msg,
+            no_personal_data_message=msg,
+            error_category=ErrorCategory.USER_ERROR,
+            target=ErrorTarget.JOB,
+            error_type=ValidationErrorType.INVALID_VALUE,
+        )

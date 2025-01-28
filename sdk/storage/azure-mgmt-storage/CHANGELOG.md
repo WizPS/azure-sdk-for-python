@@ -1,5 +1,85 @@
 # Release History
 
+## 22.0.0 (2025-01-15)
+
+### Breaking Changes
+  - Removed subfolders of some unused Api-Versions for smaller package size. If your application requires a specific and non-latest Api-Version, it's recommended to pin this package to the previous released version; If your application always only use latest Api-Version, please ignore this change.
+  - Removed operation UsageOperations.list_by_location
+
+## 21.2.1 (2024-06-27)
+
+### Bugs Fixed
+
+  - Fix signature `maxpagesize` type of Operation StorageTaskAssignmentInstancesReportOperations.list from str to int
+  - Fix signature `maxpagesize` type of Operation StorageTaskAssignmentsInstancesReportOperations.list from str to int
+  - Fix signature `maxpagesize` type of Operation StorageTaskAssignmentsOperations.list from str to int
+
+## 21.2.0 (2024-06-17)
+
+### Features Added
+
+  - Added operation group NetworkSecurityPerimeterConfigurationsOperations
+  - Added operation group StorageTaskAssignmentInstancesReportOperations
+  - Added operation group StorageTaskAssignmentsInstancesReportOperations
+  - Added operation group StorageTaskAssignmentsOperations
+  - Model LocalUser has a new parameter allow_acl_authorization
+  - Model LocalUser has a new parameter extended_groups
+  - Model LocalUser has a new parameter group_id
+  - Model LocalUser has a new parameter is_nf_sv3_enabled
+  - Model LocalUser has a new parameter user_id
+  - Model LocalUsers has a new parameter next_link
+  - Model StorageAccount has a new parameter enable_extended_groups
+  - Model StorageAccountCreateParameters has a new parameter enable_extended_groups
+  - Model StorageAccountUpdateParameters has a new parameter enable_extended_groups
+  - Operation LocalUsersOperations.list has a new optional parameter filter
+  - Operation LocalUsersOperations.list has a new optional parameter include
+  - Operation LocalUsersOperations.list has a new optional parameter maxpagesize
+
+## 21.1.0 (2023-08-18)
+
+### Features Added
+
+  - Added operation StorageAccountsOperations.begin_customer_initiated_migration
+  - Added operation StorageAccountsOperations.get_customer_initiated_migration
+  - Model BlobInventoryPolicyFilter has a new parameter creation_time
+  - Model GeoReplicationStats has a new parameter can_planned_failover
+  - Model GeoReplicationStats has a new parameter post_failover_redundancy
+  - Model GeoReplicationStats has a new parameter post_planned_failover_redundancy
+  - Model StorageAccount has a new parameter account_migration_in_progress
+  - Model StorageAccount has a new parameter is_sku_conversion_blocked
+
+## 21.1.0b1 (2023-02-20)
+
+### Other Changes
+
+  - Added generated samples in github repo
+  - Drop support for python<3.7.0
+
+## 21.0.0 (2022-11-15)
+
+### Features Added
+
+  - Model ManagementPolicyBaseBlob has a new parameter tier_to_cold
+  - Model ManagementPolicyBaseBlob has a new parameter tier_to_hot
+  - Model ManagementPolicySnapShot has a new parameter tier_to_cold
+  - Model ManagementPolicySnapShot has a new parameter tier_to_hot
+  - Model ManagementPolicyVersion has a new parameter tier_to_cold
+  - Model ManagementPolicyVersion has a new parameter tier_to_hot
+
+### Breaking Changes
+
+  - Operation EncryptionScopesOperations.list has a new parameter filter
+  - Operation EncryptionScopesOperations.list has a new parameter include
+  - Operation EncryptionScopesOperations.list has a new parameter maxpagesize
+  - Operation StorageAccountsOperations.begin_failover has a new parameter failover_type
+
+## 20.1.0 (2022-08-09)
+
+**Features**
+
+  - Added model AllowedMethods
+  - Added model LeaseContainerRequestEnum
+
 ## 20.0.0 (2022-04-06)
 
 **Features**

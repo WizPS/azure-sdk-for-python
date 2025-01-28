@@ -2,16 +2,19 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from .credentials import DatastoreCredentials
-from azure.ai.ml._restclient.v2022_02_01_preview import models as model_preview
-
-from azure.ai.ml._utils._experimental import experimental
 from base64 import b64encode
+from typing import Any, Optional
+
+from azure.ai.ml._restclient.v2023_04_01_preview import models as model_preview
+from azure.ai.ml._utils._experimental import experimental
+from azure.ai.ml.entities._credentials import NoneCredentialConfiguration
 
 
+# TODO: Move classes in this file to azure.ai.ml.entities._credentials
 @experimental
-class BaseKerberosCredentials(DatastoreCredentials):
+class BaseKerberosCredentials(NoneCredentialConfiguration):
     def __init__(self, kerberos_realm: str, kerberos_kdc_address: str, kerberos_principal: str):
+        super().__init__()
         self.kerberos_realm = kerberos_realm
         self.kerberos_kdc_address = kerberos_kdc_address
         self.kerberos_principal = kerberos_principal
@@ -25,8 +28,8 @@ class KerberosKeytabCredentials(BaseKerberosCredentials):
         kerberos_realm: str,
         kerberos_kdc_address: str,
         kerberos_principal: str,
-        kerberos_keytab: str,
-        **kwargs,
+        kerberos_keytab: Optional[str],
+        **kwargs: Any,
     ):
         super().__init__(
             kerberos_realm=kerberos_realm,
@@ -81,8 +84,8 @@ class KerberosPasswordCredentials(BaseKerberosCredentials):
         kerberos_realm: str,
         kerberos_kdc_address: str,
         kerberos_principal: str,
-        kerberos_password: str,
-        **kwargs,
+        kerberos_password: Optional[str],
+        **kwargs: Any,
     ):
         super().__init__(
             kerberos_realm=kerberos_realm,

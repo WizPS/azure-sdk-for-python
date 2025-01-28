@@ -37,6 +37,7 @@ setup(
     long_description=readme + "\n\n" + changelog,
     long_description_content_type='text/markdown',
     url='https://github.com/Azure/azure-sdk-for-python',
+    keywords="azure, azure sdk",
     author='Microsoft Corporation',
     author_email='azuresdkengsysadmins@microsoft.com',
 
@@ -47,7 +48,6 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
@@ -64,13 +64,13 @@ setup(
     package_data={
         'pytyped': ['py.typed'],
     },
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=[
         'azure-core<2.0.0,>=1.4.0',
         'msrest>=0.6.21'
     ],
     project_urls={
         'Bug Reports': 'https://github.com/Azure/azure-sdk-for-python/issues',
-        'Source': 'https://github.com/Azure/azure-sdk-python',
+        'Source': 'https://github.com/Azure/azure-sdk-for-python',
     }
 )

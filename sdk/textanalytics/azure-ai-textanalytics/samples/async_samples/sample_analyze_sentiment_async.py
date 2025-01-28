@@ -23,11 +23,10 @@ USAGE:
     2) AZURE_LANGUAGE_KEY - your Language subscription key
 """
 
-import os
 import asyncio
 
 
-async def sample_analyze_sentiment_async():
+async def sample_analyze_sentiment_async() -> None:
     print(
         "In this sample we will be combing through reviews customers have left about their"
         "experience using our skydiving company, Contoso."
@@ -37,6 +36,7 @@ async def sample_analyze_sentiment_async():
         "positive, so we can display them on our website and get even more customers!"
     )
     # [START analyze_sentiment_async]
+    import os
     from azure.core.credentials import AzureKeyCredential
     from azure.ai.textanalytics.aio import TextAnalyticsClient
 

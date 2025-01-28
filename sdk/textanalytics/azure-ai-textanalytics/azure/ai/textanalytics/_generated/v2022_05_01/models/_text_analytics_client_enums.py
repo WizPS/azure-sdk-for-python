@@ -60,14 +60,23 @@ class AnalyzeTextTaskResultsKind(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     LANGUAGE_DETECTION_RESULTS = "LanguageDetectionResults"
     ENTITY_LINKING_RESULTS = "EntityLinkingResults"
 
-class Association(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+class DocumentSentimentValue(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """Predicted sentiment for document (Negative, Neutral, Positive, or Mixed).
+    """
+
+    POSITIVE = "positive"
+    NEUTRAL = "neutral"
+    NEGATIVE = "negative"
+    MIXED = "mixed"
+
+class EntityAssociation(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Describes if the entity is the subject of the text or if it describes someone else.
     """
 
     SUBJECT = "subject"
     OTHER = "other"
 
-class Certainty(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+class EntityCertainty(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Describes the entities certainty and polarity.
     """
 
@@ -77,21 +86,12 @@ class Certainty(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     NEGATIVE_POSSIBLE = "negativePossible"
     NEGATIVE = "negative"
 
-class Conditionality(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+class EntityConditionality(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Describes any conditionality on the entity.
     """
 
     HYPOTHETICAL = "hypothetical"
     CONDITIONAL = "conditional"
-
-class DocumentSentimentValue(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """Predicted sentiment for document (Negative, Neutral, Positive, or Mixed).
-    """
-
-    POSITIVE = "positive"
-    NEUTRAL = "neutral"
-    NEGATIVE = "negative"
-    MIXED = "mixed"
 
 class ErrorCode(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Human-readable error code.
@@ -120,32 +120,58 @@ class HealthcareEntityCategory(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Healthcare Entity Category.
     """
 
-    BODY_STRUCTURE = "BODY_STRUCTURE"
-    AGE = "AGE"
-    GENDER = "GENDER"
-    EXAMINATION_NAME = "EXAMINATION_NAME"
-    DATE = "DATE"
-    DIRECTION = "DIRECTION"
-    FREQUENCY = "FREQUENCY"
-    MEASUREMENT_VALUE = "MEASUREMENT_VALUE"
-    MEASUREMENT_UNIT = "MEASUREMENT_UNIT"
-    RELATIONAL_OPERATOR = "RELATIONAL_OPERATOR"
-    TIME = "TIME"
-    GENE_OR_PROTEIN = "GENE_OR_PROTEIN"
-    VARIANT = "VARIANT"
-    ADMINISTRATIVE_EVENT = "ADMINISTRATIVE_EVENT"
-    CARE_ENVIRONMENT = "CARE_ENVIRONMENT"
-    HEALTHCARE_PROFESSION = "HEALTHCARE_PROFESSION"
-    DIAGNOSIS = "DIAGNOSIS"
-    SYMPTOM_OR_SIGN = "SYMPTOM_OR_SIGN"
-    CONDITION_QUALIFIER = "CONDITION_QUALIFIER"
-    MEDICATION_CLASS = "MEDICATION_CLASS"
-    MEDICATION_NAME = "MEDICATION_NAME"
-    DOSAGE = "DOSAGE"
-    MEDICATION_FORM = "MEDICATION_FORM"
-    MEDICATION_ROUTE = "MEDICATION_ROUTE"
-    FAMILY_RELATION = "FAMILY_RELATION"
-    TREATMENT_NAME = "TREATMENT_NAME"
+    BODY_STRUCTURE = "BodyStructure"
+    AGE = "Age"
+    GENDER = "Gender"
+    EXAMINATION_NAME = "ExaminationName"
+    DATE = "Date"
+    DIRECTION = "Direction"
+    FREQUENCY = "Frequency"
+    MEASUREMENT_VALUE = "MeasurementValue"
+    MEASUREMENT_UNIT = "MeasurementUnit"
+    RELATIONAL_OPERATOR = "RelationalOperator"
+    TIME = "Time"
+    GENE_OR_PROTEIN = "GeneOrProtein"
+    VARIANT = "Variant"
+    ADMINISTRATIVE_EVENT = "AdministrativeEvent"
+    CARE_ENVIRONMENT = "CareEnvironment"
+    HEALTHCARE_PROFESSION = "HealthcareProfession"
+    DIAGNOSIS = "Diagnosis"
+    SYMPTOM_OR_SIGN = "SymptomOrSign"
+    CONDITION_QUALIFIER = "ConditionQualifier"
+    MEDICATION_CLASS = "MedicationClass"
+    MEDICATION_NAME = "MedicationName"
+    DOSAGE = "Dosage"
+    MEDICATION_FORM = "MedicationForm"
+    MEDICATION_ROUTE = "MedicationRoute"
+    FAMILY_RELATION = "FamilyRelation"
+    TREATMENT_NAME = "TreatmentName"
+
+class HealthcareEntityRelation(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """Type of relation. Examples include: ``DosageOfMedication`` or 'FrequencyOfMedication', etc.
+    """
+
+    ABBREVIATION = "Abbreviation"
+    DIRECTION_OF_BODY_STRUCTURE = "DirectionOfBodyStructure"
+    DIRECTION_OF_CONDITION = "DirectionOfCondition"
+    DIRECTION_OF_EXAMINATION = "DirectionOfExamination"
+    DIRECTION_OF_TREATMENT = "DirectionOfTreatment"
+    DOSAGE_OF_MEDICATION = "DosageOfMedication"
+    FORM_OF_MEDICATION = "FormOfMedication"
+    FREQUENCY_OF_MEDICATION = "FrequencyOfMedication"
+    FREQUENCY_OF_TREATMENT = "FrequencyOfTreatment"
+    QUALIFIER_OF_CONDITION = "QualifierOfCondition"
+    RELATION_OF_EXAMINATION = "RelationOfExamination"
+    ROUTE_OF_MEDICATION = "RouteOfMedication"
+    TIME_OF_CONDITION = "TimeOfCondition"
+    TIME_OF_EVENT = "TimeOfEvent"
+    TIME_OF_EXAMINATION = "TimeOfExamination"
+    TIME_OF_MEDICATION = "TimeOfMedication"
+    TIME_OF_TREATMENT = "TimeOfTreatment"
+    UNIT_OF_CONDITION = "UnitOfCondition"
+    UNIT_OF_EXAMINATION = "UnitOfExamination"
+    VALUE_OF_CONDITION = "ValueOfCondition"
+    VALUE_OF_EXAMINATION = "ValueOfExamination"
 
 class InnerErrorCode(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Human-readable error code.
@@ -166,7 +192,18 @@ class InnerErrorCode(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     UNSUPPORTED_LANGUAGE_CODE = "UnsupportedLanguageCode"
     INVALID_COUNTRY_HINT = "InvalidCountryHint"
 
-class PiiCategory(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+class PiiDomain(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """The PII domain used for PII Entity Recognition.
+    """
+
+    #: Indicates that entities in the Personal Health Information domain should be redacted.
+    PHI = "phi"
+    #: Indicates that no domain is specified.
+    NONE = "none"
+
+class PiiEntityCategory(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """PiiEntityCategory.
+    """
 
     ABA_ROUTING_NUMBER = "ABARoutingNumber"
     AR_NATIONAL_IDENTITY_NUMBER = "ARNationalIdentityNumber"
@@ -342,41 +379,6 @@ class PiiCategory(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     ALL = "All"
     DEFAULT = "Default"
 
-class PiiDomain(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """The PII domain used for PII Entity Recognition.
-    """
-
-    #: Indicates that entities in the Personal Health Information domain should be redacted.
-    PHI = "phi"
-    #: Indicates that no domain is specified.
-    NONE = "none"
-
-class RelationType(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """Type of relation. Examples include: ``DosageOfMedication`` or 'FrequencyOfMedication', etc.
-    """
-
-    ABBREVIATION = "Abbreviation"
-    DIRECTION_OF_BODY_STRUCTURE = "DirectionOfBodyStructure"
-    DIRECTION_OF_CONDITION = "DirectionOfCondition"
-    DIRECTION_OF_EXAMINATION = "DirectionOfExamination"
-    DIRECTION_OF_TREATMENT = "DirectionOfTreatment"
-    DOSAGE_OF_MEDICATION = "DosageOfMedication"
-    FORM_OF_MEDICATION = "FormOfMedication"
-    FREQUENCY_OF_MEDICATION = "FrequencyOfMedication"
-    FREQUENCY_OF_TREATMENT = "FrequencyOfTreatment"
-    QUALIFIER_OF_CONDITION = "QualifierOfCondition"
-    RELATION_OF_EXAMINATION = "RelationOfExamination"
-    ROUTE_OF_MEDICATION = "RouteOfMedication"
-    TIME_OF_CONDITION = "TimeOfCondition"
-    TIME_OF_EVENT = "TimeOfEvent"
-    TIME_OF_EXAMINATION = "TimeOfExamination"
-    TIME_OF_MEDICATION = "TimeOfMedication"
-    TIME_OF_TREATMENT = "TimeOfTreatment"
-    UNIT_OF_CONDITION = "UnitOfCondition"
-    UNIT_OF_EXAMINATION = "UnitOfExamination"
-    VALUE_OF_CONDITION = "ValueOfCondition"
-    VALUE_OF_EXAMINATION = "ValueOfExamination"
-
 class SentenceSentimentValue(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """The predicted Sentiment for the sentence.
     """
@@ -386,6 +388,8 @@ class SentenceSentimentValue(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     NEGATIVE = "negative"
 
 class State(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """State.
+    """
 
     NOT_STARTED = "notStarted"
     RUNNING = "running"

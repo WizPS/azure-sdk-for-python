@@ -1,28 +1,80 @@
 # Release History
 
-## 1.1.0 (Unreleased)
+## 1.5.1 (Unreleased)
 
 ### Features Added
-
-- Added support to build a custom Teams endpoint using Microsoft 365 Teams identities:
-    - Added `get_token_for_teams_user(aad_token, client_id, user_object_id)` method that provides the ability to exchange an Azure AD access token of a Teams user for a Communication Identity access token to `CommunicationIdentityClient`.
-- Removed `ApiVersion.V2021_10_31_preview` from API versions.
-- Added a new API version `ApiVersion.V2022_06_01` that is now the deafult API version
-- Exported types `MicrosoftTeamsUserIdentifier`, `PhoneNumberIdentifier`, `UnknownIdentifier` for non Azure Communication Services `CommunicationIdentifier` identities.
-- Added `identifier_from_raw_id` and ensured that `CommunicationIdentifier.raw_id` is populated on creation. Together, these can be used to translate between a `CommunicationIdentifier` and its underlying canonical raw ID representation. Developers can now use the raw ID as an encoded format for identifiers to store in their databases or as stable keys in general.
 
 ### Breaking Changes
 
 ### Bugs Fixed
 
 ### Other Changes
-- Python 2.7 is no longer supported. Please use Python version 3.6 or later.
+
+- Python 3.7 is no longer supported. Please use Python version 3.8 or later. For more details, please read our page on [Azure SDK for Python version support policy](https://github.com/Azure/azure-sdk-for-python/wiki/Azure-SDKs-Python-version-support-policy).
+
+## 1.5.0 (2024-02-14)
+
+### Features Added
+
+- Added support for a new communication identifier `MicrosoftTeamsAppIdentifier`.
+
+## 1.4.0 (2023-11-30)
+
+### Features Added
+
+- Introduction of new scopes for token generation.
+    - `CHAT_JOIN` (Access to Chat APIs but without the authorization to create, delete or update chat threads)
+    - `CHAT_JOIN_LIMITED` (A more limited version of `CHAT_JOIN` that doesn't allow to add or remove participants)
+    - `VOIP_JOIN` (Access to Calling APIs but without the authorization to start new calls)
+- Added a new API version `ApiVersion.V2023_10_01` that is now the default API version.
+
+### Other Changes
+- The `MicrosoftBotIdentifier` and `MicrosoftBotProperties` have been removed.
+
+## 1.4.0b1 (2023-04-05)
+
+### Features Added
+- Added support for a new communication identifier `MicrosoftBotIdentifier`.
+
+## 1.3.1 (2022-10-28)
+
+### Bug Fixes
+
+- Fixed the logic of `PhoneNumberIdentifier` to always maintain the original phone number string whether it included the leading + sign or not.
+
+## 1.3.0 (2022-10-13)
+
+### Features Added
+
+- Added support to customize the Communication Identity access token's validity period:
+    - `create_user_and_token` and `get_token` methods in both sync and async clients can now accept keyword argument `token_expires_in: ~datetime.timedelta` that provides the ability to create a Communication Identity access token with custom expiration.
+- Added a new API version `ApiVersion.V2022_10_01` that is now the default API version.
+- Added the ability specify the API version by an optional `api_version` keyword parameter.
+
+## 1.2.0 (2022-08-24)
+
+### Features Added
+
+- Exported types `MicrosoftTeamsUserIdentifier`, `PhoneNumberIdentifier`, `UnknownIdentifier` for non Azure Communication Services `CommunicationIdentifier` identities. Exported related types: `MicrosoftTeamsUserProperties` and `PhoneNumberProperties`.
+- Added `identifier_from_raw_id` and ensured that `CommunicationIdentifier.raw_id` is populated on creation. Together, these can be used to translate between a `CommunicationIdentifier` and its underlying canonical raw ID representation. Developers can now use the raw ID as an encoded format for identifiers to store in their databases or as stable keys in general.
+
+## 1.1.0 (2022-08-01)
+
+### Features Added
+
+- Added support to integrate communication as Teams user with Azure Communication Services:
+    - Added `get_token_for_teams_user(aad_token, client_id, user_object_id)` method that provides the ability to exchange an Azure AD access token of a Teams user for a Communication Identity access token to `CommunicationIdentityClient`.
+- Removed `ApiVersion.V2021_10_31_preview` from API versions.
+- Added a new API version `ApiVersion.V2022_06_01` that is now the default API version
+
+### Other Changes
+- Python 2.7 is no longer supported. Please use Python version 3.7 or later. For more details, please read our page on [Azure SDK for Python version support policy](https://github.com/Azure/azure-sdk-for-python/wiki/Azure-SDKs-Python-version-support-policy).
 
 ## 1.1.0b1 (2021-11-09)
 
 ### Features Added
 
-- Added support for Microsoft 365 Teams identities
+- Added support to integrate communication as Teams user with Azure Communication Services:
   - `CommunicationIdentityClient` added a new method `get_token_for_teams_user` that provides the ability to exchange an Azure AD access token of a Teams user for a Communication Identity access token
 
 ## 1.0.1 (2021-06-08)
@@ -58,4 +110,4 @@
 <!-- LINKS -->
 
 [read_me]: https://github.com/Azure/azure-sdk-for-python/blob/main/sdk/communication/azure-communication-identity/README.md
-[documentation]: https://docs.microsoft.com/azure/communication-services/quickstarts/access-tokens?pivots=programming-language-python
+[documentation]: https://learn.microsoft.com/azure/communication-services/quickstarts/access-tokens?pivots=programming-language-python

@@ -9,7 +9,13 @@ import functools
 from typing import TYPE_CHECKING
 import warnings
 
-from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import (
+    ClientAuthenticationError,
+    HttpResponseError,
+    ResourceExistsError,
+    ResourceNotFoundError,
+    map_error,
+)
 from azure.core.paging import ItemPaged
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import HttpResponse
@@ -24,7 +30,8 @@ from .._vendor import _convert_request, _format_url_section
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
     from typing import Any, Callable, Dict, Generic, Iterable, Optional, TypeVar
-    T = TypeVar('T')
+
+    T = TypeVar("T")
     ClsType = Optional[Callable[[PipelineResponse[HttpRequest, HttpResponse], T, Dict[str, Any]], Any]]
 
 _SERIALIZER = Serializer()
@@ -228,7 +235,7 @@ class CodeContainersOperations(object):
 
         :param resource_group_name: The name of the resource group. The name is case insensitive.
         :type resource_group_name: str
-        :param registry_name:
+        :param registry_name: Name of Azure Machine Learning registry.
         :type registry_name: str
         :param skiptoken: Continuation token for pagination.
         :type skiptoken: str
@@ -242,29 +249,28 @@ class CodeContainersOperations(object):
          ~azure.core.paging.ItemPaged[~azure.mgmt.machinelearningservices.models.CodeContainerResourceArmPaginatedResult]
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        api_version = kwargs.pop('api_version', "2021-10-01-dataplanepreview")  # type: str
+        api_version = kwargs.pop("api_version", "2021-10-01-dataplanepreview")  # type: str
 
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.CodeContainerResourceArmPaginatedResult"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.CodeContainerResourceArmPaginatedResult"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
+
         def prepare_request(next_link=None):
             if not next_link:
-                
+
                 request = build_list_request(
                     subscription_id=self._config.subscription_id,
                     resource_group_name=resource_group_name,
                     registry_name=registry_name,
                     api_version=api_version,
                     skiptoken=skiptoken,
-                    template_url=self.list.metadata['url'],
+                    template_url=self.list.metadata["url"],
                 )
                 request = _convert_request(request)
                 request.url = self._client.format_url(request.url)
 
             else:
-                
+
                 request = build_list_request(
                     subscription_id=self._config.subscription_id,
                     resource_group_name=resource_group_name,
@@ -298,11 +304,9 @@ class CodeContainersOperations(object):
 
             return pipeline_response
 
+        return ItemPaged(get_next, extract_data)
 
-        return ItemPaged(
-            get_next, extract_data
-        )
-    list.metadata = {'url': '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes'}  # type: ignore
+    list.metadata = {"url": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes"}  # type: ignore
 
     @distributed_trace
     def delete(
@@ -321,7 +325,7 @@ class CodeContainersOperations(object):
         :type name: str
         :param resource_group_name: The name of the resource group. The name is case insensitive.
         :type resource_group_name: str
-        :param registry_name:
+        :param registry_name: Name of Azure Machine Learning registry.
         :type registry_name: str
         :keyword api_version: Api Version. The default value is "2021-10-01-dataplanepreview". Note
          that overriding this default value may result in unsupported behavior.
@@ -331,22 +335,19 @@ class CodeContainersOperations(object):
         :rtype: None
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType[None]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType[None]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        api_version = kwargs.pop('api_version', "2021-10-01-dataplanepreview")  # type: str
+        api_version = kwargs.pop("api_version", "2021-10-01-dataplanepreview")  # type: str
 
-        
         request = build_delete_request(
             name=name,
             subscription_id=self._config.subscription_id,
             resource_group_name=resource_group_name,
             registry_name=registry_name,
             api_version=api_version,
-            template_url=self.delete.metadata['url'],
+            template_url=self.delete.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -362,8 +363,7 @@ class CodeContainersOperations(object):
         if cls:
             return cls(pipeline_response, None, {})
 
-    delete.metadata = {'url': '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}'}  # type: ignore
-
+    delete.metadata = {"url": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}"}  # type: ignore
 
     @distributed_trace
     def get(
@@ -382,7 +382,7 @@ class CodeContainersOperations(object):
         :type name: str
         :param resource_group_name: The name of the resource group. The name is case insensitive.
         :type resource_group_name: str
-        :param registry_name:
+        :param registry_name: Name of Azure Machine Learning registry.
         :type registry_name: str
         :keyword api_version: Api Version. The default value is "2021-10-01-dataplanepreview". Note
          that overriding this default value may result in unsupported behavior.
@@ -392,22 +392,19 @@ class CodeContainersOperations(object):
         :rtype: ~azure.mgmt.machinelearningservices.models.CodeContainerData
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.CodeContainerData"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.CodeContainerData"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        api_version = kwargs.pop('api_version', "2021-10-01-dataplanepreview")  # type: str
+        api_version = kwargs.pop("api_version", "2021-10-01-dataplanepreview")  # type: str
 
-        
         request = build_get_request(
             name=name,
             subscription_id=self._config.subscription_id,
             resource_group_name=resource_group_name,
             registry_name=registry_name,
             api_version=api_version,
-            template_url=self.get.metadata['url'],
+            template_url=self.get.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -420,15 +417,14 @@ class CodeContainersOperations(object):
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error, error_format=ARMErrorFormat)
 
-        deserialized = self._deserialize('CodeContainerData', pipeline_response)
+        deserialized = self._deserialize("CodeContainerData", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get.metadata = {'url': '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}'}  # type: ignore
-
+    get.metadata = {"url": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}"}  # type: ignore
 
     @distributed_trace
     def create_or_update(
@@ -448,7 +444,7 @@ class CodeContainersOperations(object):
         :type name: str
         :param resource_group_name: The name of the resource group. The name is case insensitive.
         :type resource_group_name: str
-        :param registry_name:
+        :param registry_name: Name of Azure Machine Learning registry.
         :type registry_name: str
         :param body: Container entity to create or update.
         :type body: ~azure.mgmt.machinelearningservices.models.CodeContainerData
@@ -460,16 +456,14 @@ class CodeContainersOperations(object):
         :rtype: ~azure.mgmt.machinelearningservices.models.CodeContainerData
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.CodeContainerData"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.CodeContainerData"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        api_version = kwargs.pop('api_version', "2021-10-01-dataplanepreview")  # type: str
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+        api_version = kwargs.pop("api_version", "2021-10-01-dataplanepreview")  # type: str
+        content_type = kwargs.pop("content_type", "application/json")  # type: Optional[str]
 
-        _json = self._serialize.body(body, 'CodeContainerData')
+        _json = self._serialize.body(body, "CodeContainerData")
 
         request = build_create_or_update_request(
             name=name,
@@ -479,7 +473,7 @@ class CodeContainersOperations(object):
             api_version=api_version,
             content_type=content_type,
             json=_json,
-            template_url=self.create_or_update.metadata['url'],
+            template_url=self.create_or_update.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -492,12 +486,11 @@ class CodeContainersOperations(object):
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error, error_format=ARMErrorFormat)
 
-        deserialized = self._deserialize('CodeContainerData', pipeline_response)
+        deserialized = self._deserialize("CodeContainerData", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    create_or_update.metadata = {'url': '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}'}  # type: ignore
-
+    create_or_update.metadata = {"url": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/codes/{name}"}  # type: ignore

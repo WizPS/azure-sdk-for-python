@@ -38,13 +38,13 @@ USAGE:
     1) AZURE_TENANT_ID - The ID of the service principal's tenant. Also called its 'directory' ID.
     2) AZURE_CLIENT_ID - The service principal's client ID. Also called its 'application' ID.
     3) AZURE_CLIENT_SECRET - One of the service principal's client secrets.
-    4) SCHEMAREGISTRY_FULLY_QUALIFIED_NAMESPACE - The schema registry fully qualified namespace,
+    4) SCHEMAREGISTRY_AVRO_FULLY_QUALIFIED_NAMESPACE - The schema registry fully qualified namespace,
      which should follow the format: `<your-namespace>.servicebus.windows.net`
     5) SCHEMAREGISTRY_GROUP - The name of the schema group.
 
 This example uses ClientSecretCredential, which requests a token from Azure Active Directory.
 For more information on ClientSecretCredential, see:
-    https://docs.microsoft.com/python/api/azure-identity/azure.identity.clientsecretcredential?view=azure-python
+    https://learn.microsoft.com/python/api/azure-identity/azure.identity.clientsecretcredential?view=azure-python
 """
 import os
 import asyncio
@@ -60,7 +60,7 @@ CLIENT_ID = os.environ["AZURE_CLIENT_ID"]
 CLIENT_SECRET = os.environ["AZURE_CLIENT_SECRET"]
 
 SCHEMAREGISTRY_FULLY_QUALIFIED_NAMESPACE = os.environ[
-    "SCHEMAREGISTRY_FULLY_QUALIFIED_NAMESPACE"
+    "SCHEMAREGISTRY_AVRO_FULLY_QUALIFIED_NAMESPACE"
 ]
 GROUP_NAME = os.environ["SCHEMAREGISTRY_GROUP"]
 SCHEMA_STRING = """
@@ -117,5 +117,4 @@ async def main():
     await token_credential.close()
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    asyncio.run(main())

@@ -11,43 +11,49 @@ from azure.core import CaseInsensitiveEnumMeta
 
 
 class AccessLevel(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """AccessLevel."""
 
     NONE = "None"
     READ = "Read"
 
+
 class CachingTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """Specifies the caching requirements. :code:`<br>`:code:`<br>` Possible values are:
-    :code:`<br>`:code:`<br>` **None** :code:`<br>`:code:`<br>` **ReadOnly**
-    :code:`<br>`:code:`<br>` **ReadWrite** :code:`<br>`:code:`<br>` Default: **None for Standard
-    storage. ReadOnly for Premium storage**
+    """Specifies the caching requirements. :code:`<br>`\\ :code:`<br>` Possible values are:
+    :code:`<br>`\\ :code:`<br>` **None** :code:`<br>`\\ :code:`<br>` **ReadOnly** :code:`<br>`\\
+    :code:`<br>` **ReadWrite** :code:`<br>`\\ :code:`<br>` Default: **None for Standard storage.
+    ReadOnly for Premium storage**.
     """
 
     NONE = "None"
     READ_ONLY = "ReadOnly"
     READ_WRITE = "ReadWrite"
 
+
 class DiskCreateOption(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """This enumerates the possible sources of a disk's creation.
-    """
+    """This enumerates the possible sources of a disk's creation."""
 
     EMPTY = "Empty"
     ATTACH = "Attach"
     FROM_IMAGE = "FromImage"
-    IMPORT_ENUM = "Import"
+    IMPORT = "Import"
     COPY = "Copy"
+    IMPORT_ENUM = "Import"
+
 
 class DiskCreateOptionTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """Specifies how the virtual machine should be created.:code:`<br>`:code:`<br>` Possible values
-    are::code:`<br>`:code:`<br>` **Attach** \u2013 This value is used when you are using a
-    specialized disk to create the virtual machine.:code:`<br>`:code:`<br>` **FromImage** \u2013
-    This value is used when you are using an image to create the virtual machine. If you are using
-    a platform image, you also use the imageReference element described above. If you are using a
-    marketplace image, you  also use the plan element previously described.
+    """Specifies how the virtual machine should be created.\\ :code:`<br>`\\ :code:`<br>` Possible
+    values are:\\ :code:`<br>`\\ :code:`<br>` **Attach** \\u2013 This value is used when you are
+    using a specialized disk to create the virtual machine.\\ :code:`<br>`\\ :code:`<br>`
+    **FromImage** \\u2013 This value is used when you are using an image to create the virtual
+    machine. If you are using a platform image, you also use the imageReference element described
+    above. If you are using a marketplace image, you  also use the plan element previously
+    described.
     """
 
     FROM_IMAGE = "FromImage"
     EMPTY = "Empty"
     ATTACH = "Attach"
+
 
 class IPVersion(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Available from Api-Version 2017-03-30 onwards, it represents whether the specific
@@ -58,67 +64,69 @@ class IPVersion(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     I_PV4 = "IPv4"
     I_PV6 = "IPv6"
 
+
 class MaintenanceOperationResultCodeTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """The Last Maintenance Operation Result Code.
-    """
+    """The Last Maintenance Operation Result Code."""
 
     NONE = "None"
     RETRY_LATER = "RetryLater"
     MAINTENANCE_ABORTED = "MaintenanceAborted"
     MAINTENANCE_COMPLETED = "MaintenanceCompleted"
 
+
 class OperatingSystemStateTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """The OS State.
-    """
+    """The OS State."""
 
     GENERALIZED = "Generalized"
     SPECIALIZED = "Specialized"
 
+
 class OperatingSystemTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """The operating system of the osDiskImage.
-    """
+    """The operating system of the osDiskImage."""
 
     WINDOWS = "Windows"
     LINUX = "Linux"
 
+
 class ProtocolTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """Specifies the protocol of listener. :code:`<br>`:code:`<br>` Possible values are: :code:`<br>`\
-    **http** :code:`<br>`:code:`<br>` **https**
+    """Specifies the protocol of listener. :code:`<br>`\\ :code:`<br>` Possible values are:
+    :code:`<br>`\\ **http** :code:`<br>`\\ :code:`<br>` **https**.
     """
 
     HTTP = "Http"
     HTTPS = "Https"
 
+
 class ResourceSkuCapacityScaleType(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """The scale type applicable to the sku.
-    """
+    """The scale type applicable to the sku."""
 
     AUTOMATIC = "Automatic"
     MANUAL = "Manual"
     NONE = "None"
 
+
 class ResourceSkuRestrictionsReasonCode(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """The reason for restriction.
-    """
+    """The reason for restriction."""
 
     QUOTA_ID = "QuotaId"
     NOT_AVAILABLE_FOR_SUBSCRIPTION = "NotAvailableForSubscription"
 
+
 class RollingUpgradeActionType(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """The last action performed on the rolling upgrade.
-    """
+    """The last action performed on the rolling upgrade."""
 
     START = "Start"
     CANCEL = "Cancel"
 
+
 class RollingUpgradeStatusCode(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """Code indicating the current status of the upgrade.
-    """
+    """Code indicating the current status of the upgrade."""
 
     ROLLING_FORWARD = "RollingForward"
     CANCELLED = "Cancelled"
     COMPLETED = "Completed"
     FAULTED = "Faulted"
+
 
 class SettingNames(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Specifies the name of the setting to which the content applies. Possible values are:
@@ -128,13 +136,14 @@ class SettingNames(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     AUTO_LOGON = "AutoLogon"
     FIRST_LOGON_COMMANDS = "FirstLogonCommands"
 
+
 class StatusLevelTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """The level code.
-    """
+    """The level code."""
 
     INFO = "Info"
     WARNING = "Warning"
     ERROR = "Error"
+
 
 class StorageAccountTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Specifies the storage account type for the managed disk. Possible values are: Standard_LRS or
@@ -144,37 +153,39 @@ class StorageAccountTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     STANDARD_LRS = "Standard_LRS"
     PREMIUM_LRS = "Premium_LRS"
 
+
 class UpgradeMode(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """Specifies the mode of an upgrade to virtual machines in the scale set.:code:`<br />`:code:`<br
-    />` Possible values are::code:`<br />`:code:`<br />` **Manual** - You  control the application
-    of updates to virtual machines in the scale set. You do this by using the manualUpgrade
-    action.:code:`<br />`:code:`<br />` **Automatic** - All virtual machines in the scale set are
-    automatically updated at the same time.
+    """Specifies the mode of an upgrade to virtual machines in the scale set.\\ :code:`<br />`\\
+    :code:`<br />` Possible values are:\\ :code:`<br />`\\ :code:`<br />` **Manual** - You  control
+    the application of updates to virtual machines in the scale set. You do this by using the
+    manualUpgrade action.\\ :code:`<br />`\\ :code:`<br />` **Automatic** - All virtual machines in
+    the scale set are  automatically updated at the same time.
     """
 
     AUTOMATIC = "Automatic"
     MANUAL = "Manual"
     ROLLING = "Rolling"
 
+
 class VirtualMachineScaleSetSkuScaleType(str, Enum, metaclass=CaseInsensitiveEnumMeta):
-    """The scale type applicable to the sku.
-    """
+    """The scale type applicable to the sku."""
 
     AUTOMATIC = "Automatic"
     NONE = "None"
+
 
 class VirtualMachineSizeTypes(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """Specifies the size of the virtual machine. For more information about virtual machine sizes,
     see `Sizes for virtual machines
     <https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-sizes?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json>`_.
-    :code:`<br>`:code:`<br>` The available VM sizes depend on region and availability set. For a
-    list of available sizes use these APIs:  :code:`<br>`:code:`<br>` `List all available virtual
-    machine sizes in an availability set
+    :code:`<br>`\\ :code:`<br>` The available VM sizes depend on region and availability set. For a
+    list of available sizes use these APIs:  :code:`<br>`\\ :code:`<br>` `List all available
+    virtual machine sizes in an availability set
     <https://docs.microsoft.com/rest/api/compute/availabilitysets/listavailablesizes>`_
-    :code:`<br>`:code:`<br>` `List all available virtual machine sizes in a region
-    <https://docs.microsoft.com/rest/api/compute/virtualmachinesizes/list>`_
-    :code:`<br>`:code:`<br>` `List all available virtual machine sizes for resizing
-    <https://docs.microsoft.com/rest/api/compute/virtualmachines/listavailablesizes>`_
+    :code:`<br>`\\ :code:`<br>` `List all available virtual machine sizes in a region
+    <https://docs.microsoft.com/rest/api/compute/virtualmachinesizes/list>`_ :code:`<br>`\\
+    :code:`<br>` `List all available virtual machine sizes for resizing
+    <https://docs.microsoft.com/rest/api/compute/virtualmachines/listavailablesizes>`_.
     """
 
     BASIC_A0 = "Basic_A0"

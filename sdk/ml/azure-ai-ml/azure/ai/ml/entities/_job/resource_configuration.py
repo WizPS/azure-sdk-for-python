@@ -2,21 +2,38 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import logging
 import json
-from typing import Dict, Any, Optional
-from azure.ai.ml.constants import JobComputePropertyFields
-from azure.ai.ml._restclient.v2021_10_01.models import ResourceConfiguration as RestResourceConfiguration
-from azure.ai.ml.entities._mixins import RestTranslatableMixin, DictMixin
+import logging
+from typing import Any, Dict, Optional
 
+from azure.ai.ml._restclient.v2023_04_01_preview.models import ResourceConfiguration as RestResourceConfiguration
+from azure.ai.ml.constants._job.job import JobComputePropertyFields
+from azure.ai.ml.entities._mixins import DictMixin, RestTranslatableMixin
 
 module_logger = logging.getLogger(__name__)
 
 
 class ResourceConfiguration(RestTranslatableMixin, DictMixin):
+    """Resource configuration for a job.
+
+    This class should not be instantiated directly. Instead, use its subclasses.
+
+    :keyword instance_count: The number of instances to use for the job.
+    :paramtype instance_count: Optional[int]
+    :keyword instance_type: The type of instance to use for the job.
+    :paramtype instance_type: Optional[str]
+    :keyword properties: The resource's property dictionary.
+    :paramtype properties: Optional[dict[str, Any]]
+    """
+
     def __init__(
-        self, *, instance_count: int = None, instance_type: str = None, properties: Dict[str, Any] = None, **kwargs
-    ):
+        self,  # pylint: disable=unused-argument
+        *,
+        instance_count: Optional[int] = None,
+        instance_type: Optional[str] = None,
+        properties: Optional[Dict[str, Any]] = None,
+        **kwargs: Any
+    ) -> None:
         self.instance_count = instance_count
         self.instance_type = instance_type
         self.properties = {}
@@ -40,7 +57,7 @@ class ResourceConfiguration(RestTranslatableMixin, DictMixin):
                         key = JobComputePropertyFields.AISUPERCOMPUTER
                     # recursively convert Ordered Dict to dictionary
                     serialized_properties[key] = json.loads(json.dumps(value))
-                except Exception:
+                except Exception:  # pylint: disable=W0718
                     pass
         return RestResourceConfiguration(
             instance_count=self.instance_count,
@@ -49,7 +66,9 @@ class ResourceConfiguration(RestTranslatableMixin, DictMixin):
         )
 
     @classmethod
-    def _from_rest_object(cls, rest_obj: Optional[RestResourceConfiguration]) -> Optional["ResourceConfiguration"]:
+    def _from_rest_object(  # pylint: disable=arguments-renamed
+        cls, rest_obj: Optional[RestResourceConfiguration]
+    ) -> Optional["ResourceConfiguration"]:
         if rest_obj is None:
             return None
         return ResourceConfiguration(

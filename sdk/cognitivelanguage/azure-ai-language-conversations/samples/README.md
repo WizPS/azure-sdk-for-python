@@ -23,15 +23,13 @@ These sample programs show common scenarios for the Conversational Language Unde
 |-|-|
 |[sample_analyze_conversation_app.py][sample_analyze_conversation_app] and [sample_analyze_conversation_app_async.py][sample_analyze_conversation_app_async] | Analyze intents and entities in your utterance using a conversation project. |
 | [sample_analyze_orchestration_app_conv_response.py][sample_analyze_orchestration_app_conv_response] and [sample_analyze_orchestration_app_conv_response_async.py][sample_analyze_orchestration_app_conv_response_async]| Analyze user utterance using an orchestration project, which selects the best candidate from one of your different apps to analyze user query (ex: Qna, Conversation, and Luis). In this case, it uses a conversation project. |
-| [sample_analyze_orchestration_app_luis_response.py][sample_analyze_orchestration_app_luis_response] and [sample_analyze_orchestration_app_luis_response_async.py][sample_analyze_orchestration_app_luis_response_async]| Analyze user utterance using an orchestration project, which selects the best candidate from one of your different apps to analyze user query (ex: Qna, Conversation, and Luis). In this case, it uses a Luis project. |
 | [sample_analyze_orchestration_app_qna_response.py][sample_analyze_orchestration_app_qna_response] and [sample_analyze_orchestration_app_qna_response_async.py][sample_analyze_orchestration_app_qna_response_async]| Analyze user utterance using an orchestration project, which selects the best candidate from one of your different apps to analyze user query (ex: Qna, Conversation, and Luis). In this case, it uses a Qna project. |
 | [sample_conv_summarization.py][sample_conv_summarization] and [sample_conv_summarization_async.py][sample_conv_summarization_async]| Summarize conversation in the form of issues and resolutions (ex: tech support conversation) |
-| [sample_conv_pii_transcript_input.py][sample_conv_pii_transcript_input] and [sample_conv_pii_transcript_input_async.py][sample_conv_pii_transcript_input_async]| Extract and redact personally-identifiable info from/in conversations |
-
+| [sample_manage_projects.py][sample_manage_projects] and [sample_manage_projects_async.py][sample_manage_projects_async]| Shows common authoring operations on projects. |
 
 ## Prerequisites
 
-- Python 3.6 or later is required to use this package.
+- Python 3.7 or later is required to use this package.
 - You must have an [Azure subscription][azure_subscription] and an
   [Azure CLU account][azure_clu_account] to run these samples.
 
@@ -40,7 +38,7 @@ These sample programs show common scenarios for the Conversational Language Unde
 1. Install the Azure Conversational Language Understanding client library for Python with [pip][pip]:
 
 ```bash
-pip install azure-ai-language-conversations --pre
+pip install azure-ai-language-conversations
 ```
 
 For more information about how the versioning of the SDK corresponds to the versioning of the service's API, see [here][versioning_story_readme].
@@ -74,17 +72,14 @@ what you can do with the Azure Conversational Language Understanding client libr
 [sample_analyze_orchestration_app_conv_response]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations/samples/sample_analyze_orchestration_app_conv_response.py
 [sample_analyze_orchestration_app_conv_response_async]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations/samples/async/sample_analyze_orchestration_app_conv_response_async.py
 
-[sample_analyze_orchestration_app_luis_response]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations/samples/sample_analyze_orchestration_app_luis_response.py
-[sample_analyze_orchestration_app_luis_response_async]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations/samples/async/sample_analyze_orchestration_app_luis_response_async.py
-
 [sample_analyze_orchestration_app_qna_response]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations/samples/sample_analyze_orchestration_app_qna_response.py
 [sample_analyze_orchestration_app_qna_response_async]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations/samples/async/sample_analyze_orchestration_app_qna_response_async.py
 
 [sample_conv_summarization]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations/samples/sample_conv_summarization.py
 [sample_conv_summarization_async]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations/samples/async/sample_conv_summarization_async.py
 
-[sample_conv_pii_transcript_input]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations/samples/sample_conv_pii_transcript_input.py
-[sample_conv_pii_transcript_input_async]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations/samples/async/sample_conv_pii_transcript_input_async.py
+[sample_manage_projects]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations/samples/authoring/sample_manage_projects.py
+[sample_manage_projects_async]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations/samples/async/authoring/sample_manage_projects_async.py
 
 [api_reference_documentation]: https://azuresdkdocs.blob.core.windows.net/$web/python/azure-ai-language-conversations/latest/azure.ai.language.conversations.html
 [versioning_story_readme]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cognitivelanguage/azure-ai-language-conversations#install-the-package

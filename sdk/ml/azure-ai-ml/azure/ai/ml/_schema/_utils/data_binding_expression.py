@@ -2,9 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from typing import Union
-from marshmallow import fields, Schema
-from azure.ai.ml._schema import NestedField, PathAwareSchema
-from azure.ai.ml._schema.core.fields import DataBindingStr, UnionField
+
+from marshmallow import Schema, fields
+
+from azure.ai.ml._schema.core.fields import DataBindingStr, ExperimentalField, NestedField, UnionField
+from azure.ai.ml._schema.core.schema import PathAwareSchema
 
 DATA_BINDING_SUPPORTED_KEY = "_data_binding_supported"
 
@@ -29,6 +31,15 @@ def _add_data_binding_to_field(field, attrs_to_skip, schema_stack):
     elif isinstance(field, fields.List):
         # handle list
         field.inner = _add_data_binding_to_field(field.inner, attrs_to_skip, schema_stack=schema_stack)
+    elif isinstance(field, ExperimentalField):
+        field = ExperimentalField(
+            _add_data_binding_to_field(field.experimental_field, attrs_to_skip, schema_stack=schema_stack),
+            data_key=field.data_key,
+            attribute=field.attribute,
+            dump_only=field.dump_only,
+            required=field.required,
+            allow_none=field.allow_none,
+        )
     elif isinstance(field, NestedField):
         # handle nested field
         support_data_binding_expression_for_fields(field.schema, attrs_to_skip, schema_stack=schema_stack)
@@ -40,22 +51,25 @@ def _add_data_binding_to_field(field, attrs_to_skip, schema_stack):
             attribute=field.attribute,
             dump_only=field.dump_only,
             required=field.required,
+            allow_none=field.allow_none,
         )
 
     setattr(field, DATA_BINDING_SUPPORTED_KEY, True)
     return field
 
 
-def support_data_binding_expression_for_fields(
+# pylint: disable-next=docstring-missing-param
+def support_data_binding_expression_for_fields(  # pylint: disable=name-too-long
     schema: Union[PathAwareSchema, Schema], attrs_to_skip=None, schema_stack=None
 ):
     """Update fields inside schema to support data binding string.
+
     Only first layer of recursive schema is supported now.
     """
     if hasattr(schema, DATA_BINDING_SUPPORTED_KEY) and getattr(schema, DATA_BINDING_SUPPORTED_KEY):
         return
-    else:
-        setattr(schema, DATA_BINDING_SUPPORTED_KEY, True)
+
+    setattr(schema, DATA_BINDING_SUPPORTED_KEY, True)
 
     if attrs_to_skip is None:
         attrs_to_skip = []

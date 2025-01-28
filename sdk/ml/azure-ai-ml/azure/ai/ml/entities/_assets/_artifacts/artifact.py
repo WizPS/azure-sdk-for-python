@@ -1,15 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import Dict, Optional, Union
-from os import PathLike
 from abc import abstractmethod
+from os import PathLike
 from pathlib import Path, PurePosixPath
+from typing import Any, Dict, Optional, Union
 from urllib.parse import urljoin
 
+from azure.ai.ml._utils.utils import is_mlflow_uri, is_url
 from azure.ai.ml.entities._assets.asset import Asset
-from azure.ai.ml._utils._asset_utils import _is_local_path
-from azure.ai.ml._utils.utils import is_url, is_mlflow_uri
 
 
 class ArtifactStorageInfo:
@@ -18,7 +17,7 @@ class ArtifactStorageInfo:
         name: str,
         version: str,
         relative_path: str,
-        datastore_arm_id: str,
+        datastore_arm_id: Optional[str],
         container_name: str,
         storage_account_url: Optional[str] = None,
         is_file: Optional[bool] = None,
@@ -34,16 +33,19 @@ class ArtifactStorageInfo:
         self.indicator_file = indicator_file
 
     @property
-    def full_storage_path(self) -> str:
+    def full_storage_path(self) -> Optional[str]:
+        if self.storage_account_url is None:
+            return f"{self.container_name}/{self.relative_path}"
         return urljoin(self.storage_account_url, f"{self.container_name}/{self.relative_path}")
 
     @property
-    def subdir_path(self) -> str:
+    def subdir_path(self) -> Optional[str]:
         if self.is_file:
             path = PurePosixPath(self.relative_path).parent
+            if self.storage_account_url is None:
+                return f"{self.container_name}/{path}"
             return urljoin(self.storage_account_url, f"{self.container_name}/{path}")
-        else:
-            return self.full_storage_path
+        return self.full_storage_path
 
 
 class Artifact(Asset):
@@ -61,6 +63,8 @@ class Artifact(Asset):
     :type tags: dict[str, str]
     :param properties: The asset property dictionary.
     :type properties: dict[str, str]
+    :param datastore: The datastore to upload the local artifact to.
+    :type datastore: str
     :param kwargs: A dictionary of additional configuration parameters.
     :type kwargs: dict
     """
@@ -73,12 +77,19 @@ class Artifact(Asset):
         tags: Optional[Dict] = None,
         properties: Optional[Dict] = None,
         path: Optional[Union[str, PathLike]] = None,
-        **kwargs,
+        datastore: Optional[str] = None,
+        **kwargs: Any,
     ):
         super().__init__(
-            name=name, version=version, description=description, tags=tags, properties=properties, **kwargs
+            name=name,
+            version=version,
+            description=description,
+            tags=tags,
+            properties=properties,
+            **kwargs,
         )
         self.path = path
+        self.datastore = datastore
 
     @property
     def path(self) -> Optional[Union[str, PathLike]]:
@@ -95,9 +106,9 @@ class Artifact(Asset):
     def _to_dict(self) -> Dict:
         pass
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return (
-            type(self) == type(other)
+            type(self) == type(other)  # pylint: disable = unidiomatic-typecheck
             and self.name == other.name
             and self.id == other.id
             and self.version == other.version
@@ -108,10 +119,13 @@ class Artifact(Asset):
             and self._is_anonymous == other._is_anonymous
         )
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
     @abstractmethod
     def _update_path(self, asset_artifact: ArtifactStorageInfo) -> None:
-        """Updates an an artifact with the remote path of a local upload"""
-        pass
+        """Updates an an artifact with the remote path of a local upload.
+
+        :param asset_artifact: The asset storage info of the artifact
+        :type asset_artifact: ArtifactStorageInfo
+        """

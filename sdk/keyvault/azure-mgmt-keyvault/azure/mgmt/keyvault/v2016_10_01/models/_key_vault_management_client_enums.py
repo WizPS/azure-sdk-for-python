@@ -7,23 +7,25 @@
 # --------------------------------------------------------------------------
 
 from enum import Enum
-from six import with_metaclass
 from azure.core import CaseInsensitiveEnumMeta
 
 
-class AccessPolicyUpdateKind(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+class AccessPolicyUpdateKind(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """AccessPolicyUpdateKind."""
 
     ADD = "add"
     REPLACE = "replace"
     REMOVE = "remove"
 
-class CertificatePermissions(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+class CertificatePermissions(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """CertificatePermissions."""
 
     GET = "get"
     LIST = "list"
     DELETE = "delete"
     CREATE = "create"
-    IMPORT_ENUM = "import"
+    IMPORT = "import"
     UPDATE = "update"
     MANAGECONTACTS = "managecontacts"
     GETISSUERS = "getissuers"
@@ -33,15 +35,18 @@ class CertificatePermissions(with_metaclass(CaseInsensitiveEnumMeta, str, Enum))
     MANAGEISSUERS = "manageissuers"
     RECOVER = "recover"
     PURGE = "purge"
+    IMPORT_ENUM = "import"
 
-class CreateMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
-    """The vault's create mode to indicate whether the vault need to be recovered or not.
-    """
+
+class CreateMode(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """The vault's create mode to indicate whether the vault need to be recovered or not."""
 
     RECOVER = "recover"
     DEFAULT = "default"
 
-class KeyPermissions(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+class KeyPermissions(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """KeyPermissions."""
 
     ENCRYPT = "encrypt"
     DECRYPT = "decrypt"
@@ -53,14 +58,16 @@ class KeyPermissions(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     LIST = "list"
     CREATE = "create"
     UPDATE = "update"
-    IMPORT_ENUM = "import"
+    IMPORT = "import"
     DELETE = "delete"
     BACKUP = "backup"
     RESTORE = "restore"
     RECOVER = "recover"
     PURGE = "purge"
+    IMPORT_ENUM = "import"
 
-class Reason(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+class Reason(str, Enum, metaclass=CaseInsensitiveEnumMeta):
     """The reason that a vault name could not be used. The Reason element is only returned if
     NameAvailable is false.
     """
@@ -68,7 +75,9 @@ class Reason(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ACCOUNT_NAME_INVALID = "AccountNameInvalid"
     ALREADY_EXISTS = "AlreadyExists"
 
-class SecretPermissions(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+class SecretPermissions(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """SecretPermissions."""
 
     GET = "get"
     LIST = "list"
@@ -79,20 +88,22 @@ class SecretPermissions(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     RECOVER = "recover"
     PURGE = "purge"
 
-class SkuFamily(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
-    """SKU family name
-    """
+
+class SkuFamily(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """SKU family name."""
 
     A = "A"
 
-class SkuName(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
-    """SKU name to specify whether the key vault is a standard vault or a premium vault.
-    """
+
+class SkuName(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """SKU name to specify whether the key vault is a standard vault or a premium vault."""
 
     STANDARD = "standard"
     PREMIUM = "premium"
 
-class StoragePermissions(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+class StoragePermissions(str, Enum, metaclass=CaseInsensitiveEnumMeta):
+    """StoragePermissions."""
 
     GET = "get"
     LIST = "list"

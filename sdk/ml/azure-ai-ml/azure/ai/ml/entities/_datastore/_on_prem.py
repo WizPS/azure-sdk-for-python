@@ -2,37 +2,36 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from pathlib import Path
-from typing import Dict, Union
-from azure.ai.ml.entities._datastore.datastore import Datastore
-
-from azure.ai.ml._restclient.v2022_02_01_preview.models import (
-    HdfsDatastore as RestHdfsDatastore,
-    DatastoreData,
-    DatastoreType,
-)
-from azure.ai.ml._schema._datastore._on_prem import HdfsSchema
-from ._on_prem_credentials import KerberosKeytabCredentials, KerberosPasswordCredentials
-from azure.ai.ml.entities._datastore.utils import _from_rest_datastore_credentials_preview
-
-from ._constants import HTTP
-from azure.ai.ml.constants import BASE_PATH_CONTEXT_KEY, TYPE
-from azure.ai.ml.entities._util import load_from_dict
-
-from azure.ai.ml._utils._experimental import experimental
+# pylint: disable=protected-access
 
 from base64 import b64encode
+from pathlib import Path
+from typing import Any, Dict, Optional, Union
+
+from azure.ai.ml._restclient.v2023_04_01_preview.models import Datastore as DatastoreData
+from azure.ai.ml._restclient.v2023_04_01_preview.models import DatastoreType
+from azure.ai.ml._restclient.v2023_04_01_preview.models import HdfsDatastore as RestHdfsDatastore
+from azure.ai.ml._schema._datastore._on_prem import HdfsSchema
+from azure.ai.ml._utils._experimental import experimental
+from azure.ai.ml.constants._common import BASE_PATH_CONTEXT_KEY, TYPE
+from azure.ai.ml.entities._datastore.datastore import Datastore
+from azure.ai.ml.entities._datastore.utils import _from_rest_datastore_credentials_preview
+from azure.ai.ml.entities._util import load_from_dict
+
+from ._constants import HTTP
+from ._on_prem_credentials import KerberosKeytabCredentials, KerberosPasswordCredentials
 
 
 @experimental
 class HdfsDatastore(Datastore):
-    """HDFS datastore that is linked to an Azure ML workspace
+    """HDFS datastore that is linked to an Azure ML workspace.
 
     :param name: Name of the datastore.
     :type name: str
     :param name_node_address: IP Address or DNS HostName.
     :type name_node_address: str
-    :param hdfs_server_certificate: The TLS cert of the HDFS server (optional). Needs to be a local path on create and will be a base64 encoded string on get.
+    :param hdfs_server_certificate: The TLS cert of the HDFS server (optional).
+        Needs to be a local path on create and will be a base64 encoded string on get.
     :type hdfs_server_certificate: str
     :param protocol: http or https
     :type protocol: str
@@ -53,13 +52,13 @@ class HdfsDatastore(Datastore):
         *,
         name: str,
         name_node_address: str,
-        hdfs_server_certificate: str = None,
+        hdfs_server_certificate: Optional[str] = None,
         protocol: str = HTTP,
-        description: str = None,
-        tags: Dict = None,
-        properties: Dict = None,
-        credentials: Union[KerberosKeytabCredentials, KerberosPasswordCredentials],
-        **kwargs
+        description: Optional[str] = None,
+        tags: Optional[Dict] = None,
+        properties: Optional[Dict] = None,
+        credentials: Optional[Union[KerberosKeytabCredentials, KerberosPasswordCredentials]],
+        **kwargs: Any
     ):
         kwargs[TYPE] = DatastoreType.HDFS
         super().__init__(
@@ -86,11 +85,12 @@ class HdfsDatastore(Datastore):
         return DatastoreData(properties=hdfs_ds)
 
     @classmethod
-    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str, **kwargs) -> "HdfsDatastore":
-        return load_from_dict(HdfsSchema, data, context, additional_message)
+    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str, **kwargs: Any) -> "HdfsDatastore":
+        res: HdfsDatastore = load_from_dict(HdfsSchema, data, context, additional_message)
+        return res
 
     @classmethod
-    def _from_rest_object(cls, datastore_resource: DatastoreData):
+    def _from_rest_object(cls, datastore_resource: DatastoreData) -> "HdfsDatastore":
         properties: RestHdfsDatastore = datastore_resource.properties
         return HdfsDatastore(
             name=datastore_resource.name,
@@ -103,17 +103,19 @@ class HdfsDatastore(Datastore):
             tags=properties.tags,
         )
 
-    def __eq__(self, other) -> bool:
-        return (
+    def __eq__(self, other: Any) -> bool:
+        res: bool = (
             super().__eq__(other)
             and self.hdfs_server_certificate == other.hdfs_server_certificate
             and self.name_node_address == other.name_node_address
             and self.protocol == other.protocol
         )
+        return res
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
     def _to_dict(self) -> Dict:
         context = {BASE_PATH_CONTEXT_KEY: Path(".").parent}
-        return HdfsSchema(context=context).dump(self)
+        res: dict = HdfsSchema(context=context).dump(self)
+        return res

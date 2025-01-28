@@ -8,19 +8,18 @@
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from azure.core.pipeline.transport import HttpRequest
-
 from ._configuration import AutomationClientConfiguration
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
-    from msrest import Deserializer, Serializer
-
     from azure.core import AsyncPipelineClient
 
+    from .._serialization import Deserializer, Serializer
 
-class MixinABC(ABC):
+
+class AutomationClientMixinABC(ABC):
     """DO NOT use this class. It is for internal typing use only."""
+
     _client: "AsyncPipelineClient"
     _config: AutomationClientConfiguration
     _serialize: "Serializer"

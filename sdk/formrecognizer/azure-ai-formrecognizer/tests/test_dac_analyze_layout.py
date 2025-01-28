@@ -7,23 +7,39 @@
 import pytest
 import functools
 from devtools_testutils import recorded_by_proxy
-from azure.ai.formrecognizer._generated.v2022_06_30_preview.models import AnalyzeResultOperation
-from azure.ai.formrecognizer import DocumentAnalysisClient
-from azure.ai.formrecognizer import AnalyzeResult
-from preparers import FormRecognizerPreparer
+from azure.core.exceptions import HttpResponseError
+from azure.ai.formrecognizer._generated.v2023_07_31.models import AnalyzeResultOperation
+from azure.ai.formrecognizer import AnalysisFeature, AnalyzeResult, DocumentAnalysisClient
+from preparers import FormRecognizerPreparer, get_sync_client
 from testcase import FormRecognizerTest
-from preparers import GlobalClientPreparer as _GlobalClientPreparer
+from conftest import skip_flaky_test
 
 
-DocumentAnalysisClientPreparer = functools.partial(_GlobalClientPreparer, DocumentAnalysisClient)
+get_da_client = functools.partial(get_sync_client, DocumentAnalysisClient)
 
 
 class TestDACAnalyzeLayout(FormRecognizerTest):
 
+    @skip_flaky_test
     @FormRecognizerPreparer()
-    @DocumentAnalysisClientPreparer()
     @recorded_by_proxy
-    def test_layout_stream_transform_pdf(self, client):
+    def test_layout_incorrect_feature_format(self):
+        client = get_da_client()
+        with open(self.invoice_pdf, "rb") as fd:
+            document = fd.read()
+
+        with pytest.raises(HttpResponseError):
+            poller = client.begin_analyze_document(
+                "prebuilt-layout",
+                document,
+                features=AnalysisFeature.STYLE_FONT
+            )
+
+    @skip_flaky_test
+    @FormRecognizerPreparer()
+    @recorded_by_proxy
+    def test_layout_stream_transform_pdf(self):
+        client = get_da_client()
         with open(self.invoice_pdf, "rb") as fd:
             document = fd.read()
 
@@ -35,7 +51,11 @@ class TestDACAnalyzeLayout(FormRecognizerTest):
             responses.append(analyze_result)
             responses.append(extracted_layout)
 
-        poller = client.begin_analyze_document("prebuilt-layout", document, cls=callback)
+        poller = client.begin_analyze_document(
+            "prebuilt-layout",
+            document,
+            features=[AnalysisFeature.STYLE_FONT],
+            cls=callback)
         result = poller.result()
         raw_analyze_result = responses[0].analyze_result
         returned_model = responses[1]
@@ -54,10 +74,11 @@ class TestDACAnalyzeLayout(FormRecognizerTest):
         # check page range
         assert len(raw_analyze_result.pages) == len(returned_model.pages)
 
+    @skip_flaky_test
     @FormRecognizerPreparer()
-    @DocumentAnalysisClientPreparer()
     @recorded_by_proxy
-    def test_layout_stream_transform_jpg(self, client):
+    def test_layout_stream_transform_jpg(self):
+        client = get_da_client()
         with open(self.form_jpg, "rb") as fd:
             document = fd.read()
 
@@ -88,10 +109,11 @@ class TestDACAnalyzeLayout(FormRecognizerTest):
         # check page range
         assert len(raw_analyze_result.pages) == len(returned_model.pages)
 
+    @skip_flaky_test
     @FormRecognizerPreparer()
-    @DocumentAnalysisClientPreparer()
     @recorded_by_proxy
-    def test_layout_multipage_transform(self, client):
+    def test_layout_multipage_transform(self):
+        client = get_da_client()
         with open(self.multipage_invoice_pdf, "rb") as fd:
             document = fd.read()
 
@@ -123,10 +145,11 @@ class TestDACAnalyzeLayout(FormRecognizerTest):
         assert len(raw_analyze_result.pages) == len(returned_model.pages)
 
     @pytest.mark.live_test_only
+    @skip_flaky_test
     @FormRecognizerPreparer()
-    @DocumentAnalysisClientPreparer()
     @recorded_by_proxy
-    def test_layout_multipage_table_span_pdf(self, client):
+    def test_layout_multipage_table_span_pdf(self):
+        client = get_da_client()
         with open(self.multipage_table_pdf, "rb") as fd:
             my_file = fd.read()
         poller = client.begin_analyze_document("prebuilt-layout", my_file)
@@ -139,10 +162,25 @@ class TestDACAnalyzeLayout(FormRecognizerTest):
         assert layout.tables[2].row_count == 24
         assert layout.tables[2].column_count == 5
 
+    @pytest.mark.live_test_only
+    @skip_flaky_test
     @FormRecognizerPreparer()
-    @DocumentAnalysisClientPreparer()
     @recorded_by_proxy
-    def test_layout_specify_pages(self, client):
+    def test_layout_url_barcode(self):
+        client = get_da_client()
+        poller = client.begin_analyze_document_from_url("prebuilt-layout", self.barcode_url_tif, features=[AnalysisFeature.BARCODES])
+        layout = poller.result()
+        assert len(layout.pages) > 0
+        assert len(layout.pages[0].barcodes) == 2
+        assert layout.pages[0].barcodes[0].kind == "Code39"
+        assert layout.pages[0].barcodes[0].polygon
+        assert layout.pages[0].barcodes[0].confidence > 0.8
+
+    @skip_flaky_test
+    @FormRecognizerPreparer()
+    @recorded_by_proxy
+    def test_layout_specify_pages(self):
+        client = get_da_client()
         with open(self.multipage_invoice_pdf, "rb") as fd:
             document = fd.read()
 

@@ -6,8 +6,9 @@
 # Reference: https://code.visualstudio.com/docs/remote/devcontainerjson-reference
 
 
-from typing import Optional
-from azure.ai.ml.constants import LocalEndpointConstants
+from typing import Dict, Optional
+
+from azure.ai.ml.constants._endpoint import LocalEndpointConstants
 
 
 class Image(object):
@@ -36,7 +37,7 @@ class Build(object):
         self._target = target
 
     def to_dict(self) -> dict:
-        build = {
+        build: Dict = {
             "build": {
                 "dockerfile": self._dockerfile_path,
             }
@@ -103,7 +104,7 @@ class AppPort(object):
 class RunArgs(object):
     """Python object representation of devcontainer runArgs property."""
 
-    def __init__(self, name: str = None, labels: list = None):
+    def __init__(self, name: Optional[str] = None, labels: Optional[list] = None):
         labels = labels or []
         self._run_args = labels
         if name:

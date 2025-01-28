@@ -2,15 +2,22 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+# pylint: disable=protected-access
+
 from functools import singledispatch
 from pathlib import Path
-from azure.ai.ml.constants import DEFAULT_EXPERIMENT_NAME
+from typing import Any
 
+from azure.ai.ml._restclient.v2023_08_01_preview.models import JobBase as JobBaseData
+from azure.ai.ml.constants._common import DEFAULT_EXPERIMENT_NAME
 from azure.ai.ml.entities._builders.command import Command
+from azure.ai.ml.entities._builders.pipeline import Pipeline
+from azure.ai.ml.entities._builders.spark import Spark
 from azure.ai.ml.entities._builders.sweep import Sweep
-from .job import Job
 from azure.ai.ml.entities._job.job_name_generator import generate_job_name
-from azure.ai.ml._restclient.v2022_02_01_preview.models import JobBaseData
+
+from .import_job import ImportJob
+from .job import Job
 
 
 def generate_defaults(job: Job, rest_job: JobBaseData) -> None:
@@ -27,13 +34,14 @@ def generate_defaults(job: Job, rest_job: JobBaseData) -> None:
 
 
 @singledispatch
-def to_rest_job_object(something) -> JobBaseData:
+def to_rest_job_object(something: Any) -> JobBaseData:
     raise NotImplementedError()
 
 
 @to_rest_job_object.register(Job)
 def _(job: Job) -> JobBaseData:
-    rest_job = job._to_rest_object()
+    # TODO: Bug Item number: 2883432
+    rest_job = job._to_rest_object()  # type: ignore
     generate_defaults(job, rest_job)
     return rest_job
 
@@ -49,4 +57,25 @@ def _(command: Command) -> JobBaseData:
 def _(sweep: Sweep) -> JobBaseData:
     rest_job = sweep._to_job()._to_rest_object()
     generate_defaults(sweep, rest_job)
+    return rest_job
+
+
+@to_rest_job_object.register(Pipeline)
+def _(pipeline: Pipeline) -> JobBaseData:
+    rest_job = pipeline._to_job()._to_rest_object()
+    generate_defaults(pipeline, rest_job)
+    return rest_job
+
+
+@to_rest_job_object.register(Spark)
+def _(spark: Spark) -> JobBaseData:
+    rest_job = spark._to_job()._to_rest_object()
+    generate_defaults(spark, rest_job)
+    return rest_job
+
+
+@to_rest_job_object.register(ImportJob)
+def _(importJob: ImportJob) -> JobBaseData:
+    rest_job = importJob._to_rest_object()
+    generate_defaults(importJob, rest_job)
     return rest_job

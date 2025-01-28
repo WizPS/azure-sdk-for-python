@@ -1,5 +1,41 @@
 # Release History
 
+## 4.0.0 (2024-10-29)
+
+### Breaking Changes
+
+  - This package now only targets the latest Api-Version available on Azure and removes APIs of other Api-Version. After this change, the package can have much smaller size. If your application requires a specific and non-latest Api-Version, it's recommended to pin this package to the previous released version; If your application always only use latest Api-Version, please ignore this change.
+
+## 3.1.0 (2024-10-21)
+
+### Features Added
+
+  - Added operation group SnapshotsOperations
+  - Model ConfigurationStore has a new parameter data_plane_proxy
+  - Model ConfigurationStoreUpdateParameters has a new parameter data_plane_proxy
+
+## 3.0.0 (2023-03-27)
+
+### Breaking Changes
+
+  - Removed operation KeyValuesOperations.list_by_configuration_store
+
+## 3.0.0b1 (2023-02-15)
+
+### Breaking Changes
+
+  - Removed operation KeyValuesOperations.list_by_configuration_store
+
+## 2.2.0 (2022-08-29)
+
+### Features Added
+
+  - Added operation group ReplicasOperations
+
+### Other Changes
+
+  - Changed to multiapi package(please refer to https://github.com/Azure/azure-sdk-for-python/blob/main/doc/dev/mgmt/multiapi.md for more info)
+
 ## 2.1.0 (2022-06-08)
 
 **Features**

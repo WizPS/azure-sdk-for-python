@@ -14,7 +14,21 @@ from msrest import Deserializer, Serializer
 
 from . import models
 from ._configuration import AzureMachineLearningWorkspacesConfiguration
-from .operations import CodeContainersOperations, CodeVersionsOperations, ComponentContainersOperations, ComponentVersionsOperations, EnvironmentContainersOperations, EnvironmentVersionsOperations, ModelContainersOperations, ModelVersionsOperations, TemporaryDataReferencesOperations
+from .operations import (
+    CodeContainersOperations,
+    CodeVersionsOperations,
+    ComponentContainersOperations,
+    ComponentVersionsOperations,
+    DataContainersOperations,
+    DataReferencesOperations,
+    DataVersionsOperations,
+    EnvironmentContainersOperations,
+    EnvironmentVersionsOperations,
+    ModelContainersOperations,
+    ModelVersionsOperations,
+    ResourceManagementAssetReferenceOperations,
+    TemporaryDataReferencesOperations,
+)
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
@@ -22,6 +36,7 @@ if TYPE_CHECKING:
 
     from azure.core.credentials import TokenCredential
     from azure.core.rest import HttpRequest, HttpResponse
+
 
 class AzureMachineLearningWorkspaces(object):
     """AzureMachineLearningWorkspaces.
@@ -37,12 +52,24 @@ class AzureMachineLearningWorkspaces(object):
     :ivar component_versions: ComponentVersionsOperations operations
     :vartype component_versions:
      azure.mgmt.machinelearningservices.operations.ComponentVersionsOperations
+    :ivar data_containers: DataContainersOperations operations
+    :vartype data_containers:
+     azure.mgmt.machinelearningservices.operations.DataContainersOperations
+    :ivar data_versions: DataVersionsOperations operations
+    :vartype data_versions: azure.mgmt.machinelearningservices.operations.DataVersionsOperations
+    :ivar data_references: DataReferencesOperations operations
+    :vartype data_references:
+     azure.mgmt.machinelearningservices.operations.DataReferencesOperations
     :ivar environment_containers: EnvironmentContainersOperations operations
     :vartype environment_containers:
      azure.mgmt.machinelearningservices.operations.EnvironmentContainersOperations
     :ivar environment_versions: EnvironmentVersionsOperations operations
     :vartype environment_versions:
      azure.mgmt.machinelearningservices.operations.EnvironmentVersionsOperations
+    :ivar resource_management_asset_reference: ResourceManagementAssetReferenceOperations
+     operations
+    :vartype resource_management_asset_reference:
+     azure.mgmt.machinelearningservices.operations.ResourceManagementAssetReferenceOperations
     :ivar model_containers: ModelContainersOperations operations
     :vartype model_containers:
      azure.mgmt.machinelearningservices.operations.ModelContainersOperations
@@ -72,7 +99,9 @@ class AzureMachineLearningWorkspaces(object):
         **kwargs  # type: Any
     ):
         # type: (...) -> None
-        self._config = AzureMachineLearningWorkspacesConfiguration(credential=credential, subscription_id=subscription_id, **kwargs)
+        self._config = AzureMachineLearningWorkspacesConfiguration(
+            credential=credential, subscription_id=subscription_id, **kwargs
+        )
         self._client = ARMPipelineClient(base_url=base_url, config=self._config, **kwargs)
 
         client_models = {k: v for k, v in models.__dict__.items() if isinstance(v, type)}
@@ -81,14 +110,31 @@ class AzureMachineLearningWorkspaces(object):
         self._serialize.client_side_validation = False
         self.code_containers = CodeContainersOperations(self._client, self._config, self._serialize, self._deserialize)
         self.code_versions = CodeVersionsOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.component_containers = ComponentContainersOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.component_versions = ComponentVersionsOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.environment_containers = EnvironmentContainersOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.environment_versions = EnvironmentVersionsOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.model_containers = ModelContainersOperations(self._client, self._config, self._serialize, self._deserialize)
+        self.component_containers = ComponentContainersOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.component_versions = ComponentVersionsOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.data_containers = DataContainersOperations(self._client, self._config, self._serialize, self._deserialize)
+        self.data_versions = DataVersionsOperations(self._client, self._config, self._serialize, self._deserialize)
+        self.data_references = DataReferencesOperations(self._client, self._config, self._serialize, self._deserialize)
+        self.environment_containers = EnvironmentContainersOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.environment_versions = EnvironmentVersionsOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.resource_management_asset_reference = ResourceManagementAssetReferenceOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.model_containers = ModelContainersOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
         self.model_versions = ModelVersionsOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.temporary_data_references = TemporaryDataReferencesOperations(self._client, self._config, self._serialize, self._deserialize)
-
+        self.temporary_data_references = TemporaryDataReferencesOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
 
     def _send_request(
         self,

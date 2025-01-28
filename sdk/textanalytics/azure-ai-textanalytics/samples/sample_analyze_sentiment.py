@@ -23,10 +23,8 @@ USAGE:
     2) AZURE_LANGUAGE_KEY - your Language subscription key
 """
 
-import os
 
-
-def sample_analyze_sentiment():
+def sample_analyze_sentiment() -> None:
     print(
         "In this sample we will be combing through reviews customers have left about their"
         "experience using our skydiving company, Contoso."
@@ -37,6 +35,7 @@ def sample_analyze_sentiment():
     )
 
     # [START analyze_sentiment]
+    import os
     from azure.core.credentials import AzureKeyCredential
     from azure.ai.textanalytics import TextAnalyticsClient
 

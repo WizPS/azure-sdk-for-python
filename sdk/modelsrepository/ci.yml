@@ -27,6 +27,4 @@ extends:
   template: ../../eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: modelsrepository
-    Artifacts:
-    - name: azure-iot-modelsrepository
-      safeName: azureiotmodelsrepository
+    TestProxy: true

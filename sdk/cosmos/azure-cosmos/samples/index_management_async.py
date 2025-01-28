@@ -4,7 +4,7 @@
 # license information.
 # -------------------------------------------------------------------------
 import azure.cosmos.documents as documents
-import azure.cosmos.aio.cosmos_client as cosmos_client
+from azure.cosmos.aio import CosmosClient
 import azure.cosmos.exceptions as exceptions
 from azure.cosmos.partition_key import PartitionKey
 import urllib3
@@ -25,7 +25,7 @@ PARTITION_KEY = PartitionKey(path='/id', kind='Hash')
 #   includedPaths
 #   excludedPaths
 #
-# We can toggle 'automatic' to eiher be True or False depending upon whether we want to have indexing over all columns by default or not.
+# We can toggle 'automatic' to either be True or False depending upon whether we want to have indexing over all columns by default or not.
 #
 # We can provide options while creating documents. indexingDirective is one such,
 # by which we can tell whether it should be included or excluded in the index of the parent container.
@@ -49,7 +49,7 @@ def obtain_client():
     # connection_policy.SSLConfiguration.SSLCaCerts = CaCertPath
     # Else, disable verification
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    return cosmos_client.CosmosClient(HOST, MASTER_KEY)
+    return CosmosClient(HOST, MASTER_KEY)
 
 
 # Query for Entity / Entities
@@ -80,12 +80,12 @@ async def query_entities(parent, entity_type, id = None):
             else:
                 entities = [entity async for entity in parent.query_items(find_entity_by_id_query)]
     except exceptions.AzureError as e:
-        print("The following error occured while querying for the entity / entities ", entity_type, id if id != None else "")
+        print("The following error occurred while querying for the entity / entities ", entity_type, id if id != None else "")
         print(e)
         raise
     if id == None:
         return entities
-    if len(entities) == 1:
+    if entities and len(entities) == 1:
         return entities[0]
     return None
 
@@ -119,7 +119,7 @@ async def fetch_all_databases(client):
 
 async def query_documents_with_custom_query(container, query_with_optional_parameters, message = "Document(s) found by query: "):
     try:
-        results = container.query_items(query_with_optional_parameters, enable_cross_partition_query=True)
+        results = container.query_items(query_with_optional_parameters)
         print(message)
         async for doc in results:
             print(doc)
@@ -129,7 +129,7 @@ async def query_documents_with_custom_query(container, query_with_optional_param
     except exceptions.CosmosHttpResponseError as e:
         if e.status_code == 400:
             # Can occur when we are trying to query on excluded paths
-            print("Bad Request exception occured: ", e)
+            print("Bad Request exception occurred: ", e)
             pass
         else:
             raise
@@ -167,9 +167,9 @@ async def explicitly_exclude_from_index(db):
             }
         await query_documents_with_custom_query(created_Container, query)
 
-        # Now, create a document but this time explictly exclude it from the container using IndexingDirective
+        # Now, create a document but this time explicitly exclude it from the container using IndexingDirective
         # Then query for that document
-        # Shoud NOT find it, because we excluded it from the index
+        # Should NOT find it, because we excluded it from the index
         # BUT, the document is there and doing a ReadDocument by Id will prove it
         doc2 = await created_Container.create_item(
             body={ "id" : "doc2", "orderId" : "order2" },
@@ -340,7 +340,7 @@ async def range_scan_on_hash_index(db):
        ===== Warning=====
        This was made an opt-in model by design.
        Scanning is an expensive operation and doing this will have a large impact
-       on RequstUnits charged for an operation and will likely result in queries being throttled sooner.
+       on RequestUnits charged for an operation and will likely result in queries being throttled sooner.
     """
     try:
         await delete_container_if_exists(db, CONTAINER_ID)
@@ -377,8 +377,7 @@ async def range_scan_on_hash_index(db):
         # using the enableScanInQuery directive
         results = created_Container.query_items(
             query,
-            enable_scan_in_query=True,
-            enable_cross_partition_query=True
+            enable_scan_in_query=True
         )
         print("Printing documents queried by range by providing enableScanInQuery = True")
         async for doc in results: print(doc["id"])
@@ -629,12 +628,204 @@ async def perform_multi_orderby_query(db):
         print("Entity doesn't exist")
 
 
+async def use_geospatial_indexing_policy(db):
+    try:
+        await delete_container_if_exists(db, CONTAINER_ID)
+
+        # Create a container with geospatial indexes
+        indexing_policy = {
+            'includedPaths': [
+                {'path': '/"Location"/?',
+                    'indexes': [
+                        {
+                            'kind': 'Spatial',
+                            'dataType': 'Point'
+                        }]
+                 },
+                {
+                    'path': '/'
+                }
+            ]
+        }
+
+        created_container = await db.create_container(
+            id=CONTAINER_ID,
+            partition_key=PARTITION_KEY,
+            indexing_policy=indexing_policy
+        )
+        properties = await created_container.read()
+        print(created_container)
+
+        print("\n" + "-" * 25 + "\n9. Container created with geospatial indexes")
+        print_dictionary_items(properties["indexingPolicy"])
+
+        # Create some items
+        doc9 = await created_container.create_item(body={"id": "loc1", 'Location': {'type': 'Point', 'coordinates': [20.0, 20.0]}})
+        doc9 = await created_container.create_item(body={"id": "loc2", 'Location': {'type': 'Point', 'coordinates': [100.0, 100.0]}})
+
+        # Run ST_DISTANCE queries using the geospatial index
+        query = "SELECT * FROM root WHERE (ST_DISTANCE(root.Location, {type: 'Point', coordinates: [20.1, 20]}) < 20000)"
+        await query_documents_with_custom_query(created_container, query)
+
+        # Cleanup
+        await db.delete_container(created_container)
+        print("\n")
+    except exceptions.CosmosResourceExistsError:
+        print("Entity already exists")
+    except exceptions.CosmosResourceNotFoundError:
+        print("Entity doesn't exist")
+
+
+async def use_vector_embedding_policy(db):
+    try:
+        await delete_container_if_exists(db, CONTAINER_ID)
+
+        # Create a container with vector embedding policy and vector indexes
+        indexing_policy = {
+            "vectorIndexes": [
+                {"path": "/vector", "type": "quantizedFlat", "quantizationByteSize": 8},
+                {"path": "/vector2", "type": "diskANN", "indexingSearchListSize": 50}
+            ]
+        }
+        vector_embedding_policy = {
+            "vectorEmbeddings": [
+                {
+                    "path": "/vector",
+                    "dataType": "float32",
+                    "dimensions": 256,
+                    "distanceFunction": "euclidean"
+                },
+                {
+                    "path": "/vector2",
+                    "dataType": "int8",
+                    "dimensions": 200,
+                    "distanceFunction": "dotproduct"
+                }
+            ]
+        }
+
+        created_container = await db.create_container(
+            id=CONTAINER_ID,
+            partition_key=PARTITION_KEY,
+            indexing_policy=indexing_policy,
+            vector_embedding_policy=vector_embedding_policy
+        )
+        properties = await created_container.read()
+        print(created_container)
+
+        print("\n" + "-" * 25 + "\n10. Container created with vector embedding policy and vector indexes")
+        print_dictionary_items(properties["indexingPolicy"])
+        print_dictionary_items(properties["vectorEmbeddingPolicy"])
+
+        # We define our own get_embeddings() function for the sake of the sample, but you should be using a third
+        # party service to generate these properly.
+        def get_embeddings(num):
+            return [num, num, num]
+
+        # Create some items with vector embeddings
+        for i in range(10):
+            created_container.create_item({"id": "vector_item" + str(i), "embeddings": get_embeddings(i)})
+
+        # Run vector similarity search queries using VectorDistance
+        query = "SELECT TOP 5 c.id,VectorDistance(c.embeddings, [{}]) AS " \
+                "SimilarityScore FROM c ORDER BY VectorDistance(c.embeddings, [{}])".format(get_embeddings(1),
+                                                                                            get_embeddings(1))
+        await query_documents_with_custom_query(created_container, query)
+
+        # Run vector similarity search queries using VectorDistance with specifications
+        query = "SELECT TOP 5 c.id,VectorDistance(c.embeddings, [{}], true, {{'dataType': 'float32' ," \
+                " 'distanceFunction': 'cosine'}}) AS SimilarityScore FROM c ORDER BY VectorDistance(c.embeddings," \
+                " [{}], true, {{'dataType': 'float32', 'distanceFunction': 'cosine'}})".format(get_embeddings(1),
+                                                                                               get_embeddings(1))
+        await query_documents_with_custom_query(created_container, query)
+
+        # Cleanup
+        await db.delete_container(created_container)
+        print("\n")
+    except exceptions.CosmosResourceExistsError:
+        print("Entity already exists")
+    except exceptions.CosmosResourceNotFoundError:
+        print("Entity doesn't exist")
+
+
+async def use_full_text_policy(db):
+    try:
+        await delete_container_if_exists(db, CONTAINER_ID)
+
+        # Create a container with full text policy and full text indexes
+        indexing_policy = {
+            "automatic": True,
+            "fullTextIndexes": [
+                {"path": "/text1"}
+            ]
+        }
+        full_text_policy = {
+            "defaultLanguage": "en-US",
+            "fullTextPaths": [
+                {
+                    "path": "/text1",
+                    "language": "en-US"
+                },
+                {
+                    "path": "/text2",
+                    "language": "en-US"
+                }
+            ]
+        }
+
+        created_container = await db.create_container(
+            id=CONTAINER_ID,
+            partition_key=PARTITION_KEY,
+            indexing_policy=indexing_policy,
+            full_text_policy=full_text_policy
+        )
+        properties = await created_container.read()
+        print(created_container)
+
+        print("\n" + "-" * 25 + "\n11. Container created with full text policy and full text indexes")
+        print_dictionary_items(properties["indexingPolicy"])
+        print_dictionary_items(properties["fullTextPolicy"])
+
+        # Create some items to use with full text search
+        sample_texts = ["Common popular pop music artists include Taylor Swift and The Weekend.",
+                        "The weekend is coming up soon, do you have any plans?",
+                        "Depending on the artist, their music can be very different.",
+                        "Mozart and Beethoven are some of the most recognizable names in classical music.",
+                        "Taylor acts in many movies, and is considered a great artist."]
+
+        # Create some items to use with full text search
+        for i in range(5):
+            created_container.create_item({"id": "full_text_item" + str(i), "text1": sample_texts[i],
+                                           "vector": [1, 2, 3]})
+
+        # Run full text search queries using full text score ranking
+        query = "SELECT TOP 3 c.text1 FROM c ORDER BY RANK FullTextScore(c.text1, ['artist']))"
+        await query_documents_with_custom_query(created_container, query)
+
+        # Run full text search queries using RRF ranking
+        query = "SELECT TOP 3 c.text1 FROM c ORDER BY RANK RRF(FullTextScore(c.text1, ['music'])))"
+        await query_documents_with_custom_query(created_container, query)
+
+        # Run hybrid search queries using RRF ranking wth vector distances
+        query = "SELECT TOP 3 c.text1 FROM c ORDER BY RANK RRF(FullTextScore(c.text1, ['music'])," \
+                " VectorDistance(c.vector, [1, 2, 3]))"
+        await query_documents_with_custom_query(created_container, query)
+
+        # Cleanup
+        db.delete_container(created_container)
+        print("\n")
+    except exceptions.CosmosResourceExistsError:
+        print("Entity already exists")
+    except exceptions.CosmosResourceNotFoundError:
+        print("Entity doesn't exist")
+
+
 async def run_sample():
     try:
         async with obtain_client() as client:
             await fetch_all_databases(client)
 
-            # Create database if doesn't exist already.
+            # Create database if it doesn't exist already.
             created_db = await client.create_database_if_not_exists(DATABASE_ID)
             print(created_db)
 
@@ -659,12 +850,17 @@ async def run_sample():
             # 8. Perform Multi Orderby queries using composite indexes
             await perform_multi_orderby_query(created_db)
 
-            print('Sample done, cleaning up sample-generated data')
-            await client.delete_database(DATABASE_ID)
+            # 9. Create and use a geospatial indexing policy
+            await use_geospatial_indexing_policy(created_db)
+
+            # 10. Create and use a vector embedding policy
+            await use_vector_embedding_policy(created_db)
+
+            # 11. Create and use a full text policy
+            await use_full_text_policy(created_db)
 
     except exceptions.AzureError as e:
         raise e
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run_sample())
+    asyncio.run(run_sample())

@@ -1,5 +1,96 @@
 # Release History
 
+## 3.4.0 (2024-01-24)
+
+### Features Added
+
+  - Model `Cluster` added property `callout_policies`
+  - Model `Cluster` added property `zone_status`
+  - Enum `ClusterPrincipalRole` added member `ALL_DATABASES_MONITOR`
+  - Model `ClusterUpdate` added property `callout_policies`
+  - Model `ClusterUpdate` added property `zone_status`
+  - Enum `LanguageExtensionImageName` added member `PYTHON3_11_7`
+  - Enum `LanguageExtensionImageName` added member `PYTHON3_11_7_DL`
+  - Model `SandboxCustomImage` added property `base_image_name`
+  - Model `Script` added property `script_level`
+  - Model `Script` added property `principal_permissions_action`
+  - Added model `CalloutPoliciesList`
+  - Added model `CalloutPolicy`
+  - Added model `CalloutPolicyToRemove`
+  - Added enum `CalloutType`
+  - Added model `FollowerDatabaseDefinitionGet`
+  - Added model `FollowerDatabaseListResultGet`
+  - Added enum `OutboundAccess`
+  - Added enum `PrincipalPermissionsAction`
+  - Added enum `ScriptLevel`
+  - Added enum `ZoneStatus`
+  - Model `ClustersOperations` added method `begin_add_callout_policies`
+  - Model `ClustersOperations` added method `begin_remove_callout_policy`
+  - Model `ClustersOperations` added method `list_callout_policies`
+  - Model `ClustersOperations` added method `list_follower_databases_get`
+
+## 3.3.0 (2023-10-23)
+
+### Features Added
+
+  - Added operation group SandboxCustomImagesOperations
+  - Model ClusterUpdate has a new parameter zones
+  - Model EndpointDetail has a new parameter ip_address
+  - Model LanguageExtension has a new parameter language_extension_custom_image_name
+  - Model VirtualNetworkConfiguration has a new parameter state
+
+## 3.2.0 (2023-07-21)
+
+### Features Added
+
+  - Added operation ClustersOperations.begin_migrate
+  - Added operation group DatabaseOperations
+  - Model Cluster has a new parameter migration_cluster
+  - Model ClusterUpdate has a new parameter migration_cluster
+  - Model DatabaseListResult has a new parameter next_link
+  - Model ReadOnlyFollowingDatabase has a new parameter suspension_details
+  - Model ReadWriteDatabase has a new parameter key_vault_properties
+  - Model ReadWriteDatabase has a new parameter suspension_details
+  - Operation DatabasesOperations.list_by_cluster has a new optional parameter skiptoken
+  - Operation DatabasesOperations.list_by_cluster has a new optional parameter top
+
+## 3.1.0 (2023-02-15)
+
+### Features Added
+
+  - Added operation group SkusOperations
+  - Model LanguageExtension has a new parameter language_extension_image_name
+  - Model SkuLocationInfoItem has a new parameter zone_details
+  - Model TableLevelSharingProperties has a new parameter functions_to_exclude
+  - Model TableLevelSharingProperties has a new parameter functions_to_include
+
+## 3.1.0b1 (2022-12-27)
+
+### Features Added
+
+  - Added operation group SkusOperations
+  - Model LanguageExtension has a new parameter language_extension_image_name
+  - Model SkuLocationInfoItem has a new parameter zone_details
+
+## 3.0.0 (2022-09-15)
+
+### Features Added
+
+  - Model AttachedDatabaseConfiguration has a new parameter database_name_override
+  - Model AttachedDatabaseConfiguration has a new parameter database_name_prefix
+  - Model EventHubDataConnection has a new parameter retrieval_start_date
+  - Model FollowerDatabaseDefinition has a new parameter database_share_origin
+  - Model FollowerDatabaseDefinition has a new parameter table_level_sharing_properties
+  - Model IotHubDataConnection has a new parameter retrieval_start_date
+  - Model ReadOnlyFollowingDatabase has a new parameter database_share_origin
+  - Model ReadOnlyFollowingDatabase has a new parameter original_database_name
+  - Model ReadOnlyFollowingDatabase has a new parameter table_level_sharing_properties
+
+### Breaking Changes
+
+  - Operation DatabasesOperations.begin_create_or_update has a new parameter caller_role
+  - Operation DatabasesOperations.begin_update has a new parameter caller_role
+
 ## 2.2.0 (2022-02-22)
 
 **Features**

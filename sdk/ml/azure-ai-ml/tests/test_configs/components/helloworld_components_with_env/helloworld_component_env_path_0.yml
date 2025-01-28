@@ -27,10 +27,10 @@ outputs:
 # Write some output to work around a bug when pipeline node failed to run with empty dataset as input
 command: >-
   echo Hello World &
-  echo [${{inputs.component_in_number}}] &
+  echo $[[${{inputs.component_in_number}}]] &
   echo ${{inputs.component_in_path}} &
   echo ${{outputs.component_out_path}} > ${{outputs.component_out_path}}/component_in_number
 
 environment:
   conda_file: ./conda.yml
-  image: mcr.microsoft.com/azureml/openmpi3.1.2-ubuntu18.04
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu22.04

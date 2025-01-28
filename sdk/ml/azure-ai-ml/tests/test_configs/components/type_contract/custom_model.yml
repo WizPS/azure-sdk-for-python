@@ -31,10 +31,10 @@ outputs:
 #    type: openai_model
 
 command: |
-  python -c " 
+  python -c "
     import pickle
     with open('${{inputs.component_in_custom_model}}/model.pkl', 'rb') as f:
         model = pickle.load(f)
   "
 
-environment: azureml:AzureML-sklearn-0.24-ubuntu18.04-py37-cpu:1
+environment: azureml:AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:33

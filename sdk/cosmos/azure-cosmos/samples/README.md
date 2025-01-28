@@ -45,10 +45,14 @@ The following are code samples that show common scenario operations with the Azu
 
 * [multi-master operations](https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cosmos/azure-cosmos/samples/MultiMasterOperations) - Example demonstrating multi-master operations.
 
+* [tracing-open-telemetry](https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cosmos/azure-cosmos/samples/tracing_open_telemetry.py) - Example demonstrating how to use OpenTelemetry tracing with our SDK.
+
+* [diagnostics_handler_sample.py](https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/cosmos/azure-cosmos/samples/diagnostics_handler_sample.py) - Example demonstrating how to use diagnostics handler with our SDK.
+
 ## Prerequisites
-* Python 3.6+
+* Python 3.8+
 * You must have an [Azure subscription](https://azure.microsoft.com/free/) and an
-[Azure Cosmos DB account](https://docs.microsoft.com/azure/cosmos-db/create-sql-api-python#create-a-database-account) to run these samples.
+[Azure Cosmos DB account](https://learn.microsoft.com/azure/cosmos-db/create-sql-api-python#create-a-database-account) to run these samples.
 
 ## Setup
 

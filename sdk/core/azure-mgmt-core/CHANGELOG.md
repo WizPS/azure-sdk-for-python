@@ -1,5 +1,33 @@
 # Release History
 
+## 1.5.1 (2023-XX-XX)
+
+### Other Changes
+
+- `ARMChallengeAuthenticationPolicy` adopt `on_challenge` in `BearerTokenCredentialPolicy` of `azure-core` to support complete CAE challenges.
+
+## 1.5.0 (2024-10-31)
+
+### Features Added
+
+- Added helper function `get_arm_endpoints` to get the ARM endpoint and credential scopes from the cloud setting.
+
+## 1.4.0 (2023-04-06)
+
+### Features
+
+- Added AuxiliaryAuthenticationPolicy
+
+### Other Changes
+
+- Rename "DEFAULT_HEADERS_WHITELIST" to "DEFAULT_HEADERS_ALLOWLIST". Added a backward compatible alias.
+
+## 1.3.2 (2022-08-11)
+
+### Other Changes
+
+- Updated mindep about `azure-core` from `1.23.0` to `1.24.0`
+
 ## 1.3.1 (2022-06-14)
 
 ### Other Changes

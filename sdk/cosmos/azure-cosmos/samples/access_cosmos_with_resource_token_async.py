@@ -3,7 +3,7 @@
 # Licensed under the MIT License. See LICENSE.txt in the project root for
 # license information.
 # -------------------------------------------------------------------------
-import azure.cosmos.aio.cosmos_client as cosmos_client
+from azure.cosmos.aio import CosmosClient
 import azure.cosmos.exceptions as exceptions
 from azure.cosmos.partition_key import PartitionKey
 import azure.cosmos.documents as documents
@@ -11,12 +11,13 @@ import azure.cosmos.documents as documents
 import asyncio
 import config
 import json
+from typing import Dict, Any
 
 # ----------------------------------------------------------------------------------------------------------
-# Prerequistes -
+# Prerequisites -
 #
 # 1. An Azure Cosmos account -
-#    https://docs.microsoft.com/azure/cosmos-db/create-sql-api-python#create-a-database-account
+#    https://learn.microsoft.com/azure/cosmos-db/create-sql-api-python#create-a-database-account
 #
 # 2. Microsoft Azure Cosmos
 #    pip install azure-cosmos>=4.0.0
@@ -118,7 +119,7 @@ async def token_client_query(container, username):
 
 
 async def run_sample():
-    async with cosmos_client.CosmosClient(HOST, MASTER_KEY) as client:
+    async with CosmosClient(HOST, MASTER_KEY) as client:
 
         try:
             try:
@@ -136,7 +137,7 @@ async def run_sample():
             user = await create_user_if_not_exists(db, USERNAME)
 
             # Permission to perform operations on all items inside a container
-            permission_definition = {
+            permission_definition: Dict[str, Any] = {
                 "id": CONTAINER_ALL_PERMISSION,
                 "permissionMode": documents.PermissionMode.All,
                 "resource": container.container_link,
@@ -149,7 +150,7 @@ async def run_sample():
             # Use token to connect to database
             # If you initialize the asynchronous client without using 'async with' in your context,
             # make sure to close the client once you're done using it
-            token_client = cosmos_client.CosmosClient(HOST, token)
+            token_client = CosmosClient(HOST, token)
             token_db = token_client.get_database_client(DATABASE_ID)
             token_container = token_db.get_container_client(CONTAINER_ID)
 
@@ -189,7 +190,7 @@ async def run_sample():
 
             # Use token to connect to database
             # If you initialize the asynchronous client without using 'async with' make sure to close it once you're done
-            token_client = cosmos_client.CosmosClient(HOST, read_token)
+            token_client = CosmosClient(HOST, read_token)
             token_db = token_client.get_database_client(DATABASE_ID)
             token_container = token_db.get_container_client(CONTAINER_ID)
 
@@ -213,7 +214,7 @@ async def run_sample():
             permission_definition = {
                 "id": DOCUMENT_ALL_PERMISSION,
                 "permissionMode": documents.PermissionMode.All,
-                "resource": item_3.get('_self') #this identifies the item with id "3"
+                "resource": str(item_3.get('_self')) #this identifies the item with id "3"
             }
 
             permission = await create_permission_if_not_exists(user_2, permission_definition)
@@ -225,7 +226,7 @@ async def run_sample():
             await token_client.close()
 
             # Use token to connect to database
-            token_client = cosmos_client.CosmosClient(HOST, item_token)
+            token_client = CosmosClient(HOST, item_token)
             token_db = token_client.get_database_client(DATABASE_ID)
             token_container = token_db.get_container_client(CONTAINER_ID)
 
@@ -251,5 +252,4 @@ async def run_sample():
 
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run_sample())
+    asyncio.run(run_sample())

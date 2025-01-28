@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 """
 Examples to show usage of the azure-core-tracing-opentelemetry
 with the Text Analytics SDK and exporting to Azure monitor backend.
@@ -6,7 +8,7 @@ key phrases from input text via the Text Analytics sdk. The telemetry
 will be collected automatically and sent to Application Insights
 via the AzureMonitorTraceExporter
 """
-
+# mypy: disable-error-code="attr-defined"
 import os
 
 # Declare OpenTelemetry as enabled tracing plugin for Azure SDKs
@@ -26,10 +28,9 @@ tracer = trace.get_tracer(__name__)
 
 # azure monitor trace exporter to send telemetry to appinsights
 from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
+
 span_processor = BatchSpanProcessor(
-    AzureMonitorTraceExporter.from_connection_string(
-        os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"]
-    )
+    AzureMonitorTraceExporter.from_connection_string(os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"])
 )
 trace.get_tracer_provider().add_span_processor(span_processor)
 
@@ -38,7 +39,7 @@ from azure.core.credentials import AzureKeyCredential
 from azure.ai.textanalytics import TextAnalyticsClient
 
 credential = AzureKeyCredential("<api_key>")
-endpoint="https://<resource-name>.cognitiveservices.azure.com/"
+endpoint = "https://<resource-name>.cognitiveservices.azure.com/"
 
 text_analytics_client = TextAnalyticsClient(endpoint, credential)
 

@@ -2,14 +2,18 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from marshmallow import fields, validate
-from azure.ai.ml._schema import NestedField, PathAwareSchema
-from azure.ai.ml._schema.core.fields import ArmStr, StringTransformedEnum
-from azure.ai.ml.constants import PublicNetworkAccess, AzureMLResourceType
+from marshmallow import EXCLUDE, fields
+
 from azure.ai.ml._schema._utils.utils import validate_arm_str
-from azure.ai.ml._utils.utils import snake_to_pascal
+from azure.ai.ml._schema.core.fields import NestedField, StringTransformedEnum
+from azure.ai.ml._schema.core.schema import PathAwareSchema
 from azure.ai.ml._schema.workspace.customer_managed_key import CustomerManagedKeySchema
-from azure.ai.ml._schema.workspace.private_endpoint import PrivateEndpointSchema
+from azure.ai.ml._schema.workspace.identity import IdentitySchema
+from azure.ai.ml._schema.workspace.network_acls import NetworkAclsSchema
+from azure.ai.ml._schema.workspace.networking import ManagedNetworkSchema
+from azure.ai.ml._schema.workspace.serverless_compute import ServerlessComputeSettingsSchema
+from azure.ai.ml._utils.utils import snake_to_pascal
+from azure.ai.ml.constants._common import PublicNetworkAccess
 
 
 class WorkspaceSchema(PathAwareSchema):
@@ -30,7 +34,16 @@ class WorkspaceSchema(PathAwareSchema):
     mlflow_tracking_uri = fields.Str(dump_only=True)
     image_build_compute = fields.Str()
     public_network_access = StringTransformedEnum(
-        allowed_values=[PublicNetworkAccess.DISABLED, PublicNetworkAccess.ENABLED], casing_transform=snake_to_pascal
+        allowed_values=[PublicNetworkAccess.DISABLED, PublicNetworkAccess.ENABLED],
+        casing_transform=snake_to_pascal,
     )
-    softdelete_enable = fields.Bool()
-    allow_recover_softdeleted_workspace = fields.Bool()
+    network_acls = NestedField(NetworkAclsSchema)
+    system_datastores_auth_mode = fields.Str()
+    identity = NestedField(IdentitySchema)
+    primary_user_assigned_identity = fields.Str()
+    workspace_hub = fields.Str(validate=validate_arm_str)
+    managed_network = NestedField(ManagedNetworkSchema, unknown=EXCLUDE)
+    provision_network_now = fields.Bool()
+    enable_data_isolation = fields.Bool()
+    allow_roleassignment_on_rg = fields.Bool()
+    serverless_compute = NestedField(ServerlessComputeSettingsSchema)

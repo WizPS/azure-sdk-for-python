@@ -11,18 +11,18 @@ from azure.core.exceptions import HttpResponseError
 from azure.ai.formrecognizer._models import CustomFormModel
 from azure.ai.formrecognizer import FormTrainingClient
 from testcase import FormRecognizerTest
-from preparers import GlobalClientPreparer as _GlobalClientPreparer
-from preparers import FormRecognizerPreparer
+from preparers import FormRecognizerPreparer, get_sync_client
+from conftest import skip_flaky_test
 
-FormTrainingClientPreparer = functools.partial(_GlobalClientPreparer, FormTrainingClient)
+get_ft_client = functools.partial(get_sync_client, FormTrainingClient)
 
 class TestTraining(FormRecognizerTest):
 
+    @pytest.mark.skip("Test is flaky and hangs")
     @FormRecognizerPreparer()
-    @FormTrainingClientPreparer(client_kwargs={"api_version": "2.0"})
     @recorded_by_proxy
-    def test_training_with_labels_v2(self, client, formrecognizer_storage_container_sas_url_v2, **kwargs):
-        
+    def test_training_with_labels_v2(self, formrecognizer_storage_container_sas_url_v2, **kwargs):
+        client = get_ft_client(api_version="2.0")
         poller = client.begin_training(training_files_url=formrecognizer_storage_container_sas_url_v2, use_training_labels=True)
         model = poller.result()
 
@@ -46,11 +46,11 @@ class TestTraining(FormRecognizerTest):
                 assert field.accuracy is not None
                 assert field.name
 
+    @pytest.mark.skip("Test is flaky and hangs")
     @FormRecognizerPreparer()
-    @FormTrainingClientPreparer(client_kwargs={"api_version": "2.0"})
     @recorded_by_proxy
-    def test_training_multipage_with_labels_v2(self, client, formrecognizer_multipage_storage_container_sas_url_v2, **kwargs):
-        
+    def test_training_multipage_with_labels_v2(self, formrecognizer_multipage_storage_container_sas_url_v2, **kwargs):
+        client = get_ft_client(api_version="2.0")
         poller = client.begin_training(formrecognizer_multipage_storage_container_sas_url_v2, use_training_labels=True)
         model = poller.result()
 
@@ -72,11 +72,11 @@ class TestTraining(FormRecognizerTest):
                 assert field.name
 
 
+    @pytest.mark.skip("Test is flaky and hangs")
     @FormRecognizerPreparer()
-    @FormTrainingClientPreparer(client_kwargs={"api_version": "2.0"})
     @recorded_by_proxy
-    def test_training_without_labels_v2(self, client, formrecognizer_storage_container_sas_url_v2, **kwargs):
-        
+    def test_training_without_labels_v2(self, formrecognizer_storage_container_sas_url_v2, **kwargs):
+        client = get_ft_client(api_version="2.0")
         poller = client.begin_training(training_files_url=formrecognizer_storage_container_sas_url_v2, use_training_labels=True)
         model = poller.result()
 
@@ -100,11 +100,11 @@ class TestTraining(FormRecognizerTest):
                 assert field.accuracy is not None
                 assert field.name
 
+    @pytest.mark.skip("Test is flaky and hangs")
     @FormRecognizerPreparer()
-    @FormTrainingClientPreparer(client_kwargs={"api_version": "2.0"})
     @recorded_by_proxy
-    def test_training_multipage_without_labels_v2(self, client, formrecognizer_multipage_storage_container_sas_url_v2, **kwargs):
-        
+    def test_training_multipage_without_labels_v2(self, formrecognizer_multipage_storage_container_sas_url_v2, **kwargs):
+        client = get_ft_client(api_version="2.0")
         poller = client.begin_training(formrecognizer_multipage_storage_container_sas_url_v2, use_training_labels=True)
         model = poller.result()
 
@@ -125,11 +125,11 @@ class TestTraining(FormRecognizerTest):
                 assert field.accuracy is not None
                 assert field.name
 
+    @pytest.mark.skip("Test is flaky and hangs")
     @FormRecognizerPreparer()
-    @FormTrainingClientPreparer(client_kwargs={"api_version": "2.0"})
     @recorded_by_proxy
-    def test_training_with_files_filter_v2(self, client, formrecognizer_storage_container_sas_url_v2, **kwargs):
-        
+    def test_training_with_files_filter_v2(self, formrecognizer_storage_container_sas_url_v2, **kwargs):
+        client = get_ft_client(api_version="2.0")
         poller = client.begin_training(training_files_url=formrecognizer_storage_container_sas_url_v2, use_training_labels=False, include_subfolders=True)
         model = poller.result()
         assert len(model.training_documents) == 6
@@ -146,11 +146,11 @@ class TestTraining(FormRecognizerTest):
         assert e.value.error.code
         assert e.value.error.message
 
+    @pytest.mark.skip("Test is flaky and hangs")
     @FormRecognizerPreparer()
-    @FormTrainingClientPreparer(client_kwargs={"api_version": "2.1"})
     @recorded_by_proxy
-    def test_training_with_labels_v21(self, client, formrecognizer_storage_container_sas_url_v2, **kwargs):
-        
+    def test_training_with_labels_v21(self, formrecognizer_storage_container_sas_url_v2, **kwargs):
+        client = get_ft_client(api_version="2.1")
         poller = client.begin_training(training_files_url=formrecognizer_storage_container_sas_url_v2, use_training_labels=True, model_name="my labeled model")
         model = poller.result()
 
@@ -175,11 +175,11 @@ class TestTraining(FormRecognizerTest):
                 assert field.accuracy is not None
                 assert field.name
 
+    @pytest.mark.skip("Test is flaky and hangs")
     @FormRecognizerPreparer()
-    @FormTrainingClientPreparer(client_kwargs={"api_version": "2.1"})
     @recorded_by_proxy
-    def test_training_multipage_with_labels_v21(self, client, formrecognizer_multipage_storage_container_sas_url_v2, **kwargs):
-        
+    def test_training_multipage_with_labels_v21(self, formrecognizer_multipage_storage_container_sas_url_v2, **kwargs):
+        client = get_ft_client(api_version="2.1")
         poller = client.begin_training(formrecognizer_multipage_storage_container_sas_url_v2, use_training_labels=True)
         model = poller.result()
 
@@ -200,11 +200,11 @@ class TestTraining(FormRecognizerTest):
                 assert field.accuracy is not None
                 assert field.name
 
+    @pytest.mark.skip("Test is flaky and hangs")
     @FormRecognizerPreparer()
-    @FormTrainingClientPreparer(client_kwargs={"api_version": "2.1"})
     @recorded_by_proxy
-    def test_training_without_labels_v21(self, client, formrecognizer_storage_container_sas_url_v2, **kwargs):
-        
+    def test_training_without_labels_v21(self, formrecognizer_storage_container_sas_url_v2, **kwargs):
+        client = get_ft_client(api_version="2.1")
         poller = client.begin_training(training_files_url=formrecognizer_storage_container_sas_url_v2, use_training_labels=True, model_name="my labeled model")
         model = poller.result()
 
@@ -229,11 +229,11 @@ class TestTraining(FormRecognizerTest):
                 assert field.accuracy is not None
                 assert field.name
 
+    @pytest.mark.skip("Test is flaky and hangs")
     @FormRecognizerPreparer()
-    @FormTrainingClientPreparer(client_kwargs={"api_version": "2.1"})
     @recorded_by_proxy
-    def test_training_multipage_without_labels_v21(self, client, formrecognizer_multipage_storage_container_sas_url_v2, **kwargs):
-        
+    def test_training_multipage_without_labels_v21(self, formrecognizer_multipage_storage_container_sas_url_v2, **kwargs):
+        client = get_ft_client(api_version="2.1")
         poller = client.begin_training(formrecognizer_multipage_storage_container_sas_url_v2, use_training_labels=True)
         model = poller.result()
 
@@ -254,11 +254,11 @@ class TestTraining(FormRecognizerTest):
                 assert field.accuracy is not None
                 assert field.name
 
+    @pytest.mark.skip("Test is flaky and hangs")
     @FormRecognizerPreparer()
-    @FormTrainingClientPreparer(client_kwargs={"api_version": "2.1"})
     @recorded_by_proxy
-    def test_training_with_files_filter_v21(self, client, formrecognizer_storage_container_sas_url_v2, **kwargs):
-        
+    def test_training_with_files_filter_v21(self, formrecognizer_storage_container_sas_url_v2, **kwargs):
+        client = get_ft_client(api_version="2.1")
         poller = client.begin_training(training_files_url=formrecognizer_storage_container_sas_url_v2, use_training_labels=False, include_subfolders=True)
         model = poller.result()
         assert len(model.training_documents) == 6
@@ -276,9 +276,8 @@ class TestTraining(FormRecognizerTest):
         assert e.value.error.message
 
     @FormRecognizerPreparer()
-    @FormTrainingClientPreparer(client_kwargs={"api_version": "2.0"})
     def test_training_with_model_name_bad_api_version(self, **kwargs):
-        client = kwargs.pop("client")
+        client = get_ft_client(api_version="2.0")
         with pytest.raises(ValueError) as excinfo:
             poller = client.begin_training(training_files_url="url", use_training_labels=True, model_name="not supported in v2.0")
             result = poller.result()

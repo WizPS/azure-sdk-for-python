@@ -22,16 +22,18 @@ from azure.communication.phonenumbers.siprouting import SipRoutingClient
 connection_string = os.getenv("COMMUNICATION_SAMPLES_CONNECTION_STRING")
 client = SipRoutingClient.from_connection_string(connection_string)
 
+
 def get_sip_routes_sample():
-    sip_routes = client.get_routes()
+    sip_routes = client.list_routes()
 
     for route in sip_routes:
         print(route.name)
         print(route.description)
         print(route.number_pattern)
-            
+
         for trunk_fqdn in route.trunks:
             print(trunk_fqdn)
+
 
 if __name__ == "__main__":
     get_sip_routes_sample()

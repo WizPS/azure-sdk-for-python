@@ -2,21 +2,29 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from azure.ai.ml._restclient.v2022_02_01_preview.models import (
+from azure.ai.ml._restclient.v2023_04_01_preview.models import (
     NlpVerticalFeaturizationSettings as RestNlpVerticalFeaturizationSettings,
 )
-from azure.ai.ml.entities._job.automl.featurization_settings import FeaturizationSettings
+from azure.ai.ml.entities._job.automl.featurization_settings import FeaturizationSettings, FeaturizationSettingsType
 
 
 class NlpFeaturizationSettings(FeaturizationSettings):
-    """Featurization settings for all AutoML NLP Verticals."""
+    """Featurization settings for all AutoML NLP Verticals.
 
-    def __init__(
-        self,
-        *,
-        dataset_language: str = None,
-    ):
-        super().__init__(dataset_language=dataset_language)
+    :ivar type: Specifies the type of FeaturizationSettings. Set automatically to "NLP" for this class.
+    :vartype type: str
+
+    .. admonition:: Example:
+
+        .. literalinclude:: ../samples/ml_samples_automl_nlp.py
+                :start-after: [START automl.nlp_featurization_settings]
+                :end-before: [END automl.nlp_featurization_settings]
+                :language: python
+                :dedent: 8
+                :caption: creating an nlp featurization settings
+    """
+
+    type = FeaturizationSettingsType.NLP
 
     def _to_rest_object(self) -> RestNlpVerticalFeaturizationSettings:
         return RestNlpVerticalFeaturizationSettings(

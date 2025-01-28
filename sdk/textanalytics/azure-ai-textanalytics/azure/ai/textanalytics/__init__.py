@@ -43,12 +43,6 @@ from ._models import (
     HealthcareRelationRole,
     HealthcareEntityAssertion,
     AnalyzeSentimentAction,
-    PiiEntityCategory,
-    HealthcareEntityRelation,
-    EntityConditionality,
-    EntityCertainty,
-    EntityAssociation,
-    HealthcareEntityCategory,
     RecognizeCustomEntitiesAction,
     RecognizeCustomEntitiesResult,
     SingleLabelClassifyAction,
@@ -56,9 +50,24 @@ from ._models import (
     ClassifyDocumentResult,
     ClassificationCategory,
     AnalyzeHealthcareEntitiesAction,
+    TextAnalysisKind,
+    ExtractiveSummaryAction,
+    ExtractiveSummaryResult,
+    SummarySentence,
+    AbstractiveSummaryResult,
+    AbstractiveSummary,
+    SummaryContext,
+    AbstractiveSummaryAction,
 )
-
-from ._lro import AnalyzeHealthcareEntitiesLROPoller, AnalyzeActionsLROPoller, TextAnalyticsLROPoller
+from ._generated.models import (
+    HealthcareEntityCategory,
+    EntityAssociation,
+    EntityCertainty,
+    EntityConditionality,
+    HealthcareEntityRelation,
+    PiiEntityCategory,
+)
+from ._lro import AnalyzeHealthcareEntitiesLROPoller, AnalyzeActionsLROPoller, TextAnalysisLROPoller
 
 __all__ = [
     "TextAnalyticsApiVersion",
@@ -114,7 +123,15 @@ __all__ = [
     "ClassifyDocumentResult",
     "ClassificationCategory",
     "AnalyzeHealthcareEntitiesAction",
-    "TextAnalyticsLROPoller",
+    "TextAnalysisLROPoller",
+    "TextAnalysisKind",
+    "ExtractiveSummaryAction",
+    "ExtractiveSummaryResult",
+    "SummarySentence",
+    "AbstractiveSummaryResult",
+    "AbstractiveSummary",
+    "SummaryContext",
+    "AbstractiveSummaryAction",
 ]
 
 __version__ = VERSION

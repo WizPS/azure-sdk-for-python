@@ -1,6 +1,6 @@
 # Release History
 
-## 4.5.0b2 (Unreleased)
+## 4.9.1 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,76 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 4.9.0 (2024-10-17)
+
+### Features Added
+- Added support for Continuous Access Evaluation (CAE). `enable_cae=True` is passed to all `get_token` requests.
+
+### Bugs Fixed
+- Typing errors from using Key Vault clients as context managers have been fixed
+  ([#34744](https://github.com/Azure/azure-sdk-for-python/issues/34744))
+
+### Other Changes
+- Updated minimum `azure-core` version to 1.31.0
+
+## 4.8.0 (2024-02-22)
+
+### Features Added
+- Added support for service API version `7.5`
+
+### Bugs Fixed
+- (From 4.8.0b1) Token requests made during AD FS authentication no longer specify an erroneous "adfs" tenant ID
+  ([#29888](https://github.com/Azure/azure-sdk-for-python/issues/29888))
+
+### Other Changes
+- Python 3.7 is no longer supported. Please use Python version 3.8 or later.
+- `asyncio` is no longer directly referenced by the library
+  ([#33819](https://github.com/Azure/azure-sdk-for-python/pull/33819))
+- Updated minimum `azure-core` version to 1.29.5
+- Dropped `azure-common` requirement
+
+## 4.8.0b2 (2023-11-03)
+
+### Features Added
+- Added support for service API version `7.5-preview.1`
+
+### Other Changes
+- Key Vault API version `7.5-preview.1` is now the default
+
+## 4.8.0b1 (2023-05-16)
+
+### Bugs Fixed
+- Token requests made during AD FS authentication no longer specify an erroneous "adfs" tenant ID
+  ([#29888](https://github.com/Azure/azure-sdk-for-python/issues/29888))
+
+## 4.7.0 (2023-03-16)
+
+### Features Added
+- Added support for service API version `7.4`
+- Clients each have a `send_request` method that can be used to send custom requests using the
+  client's existing pipeline ([#25172](https://github.com/Azure/azure-sdk-for-python/issues/25172))
+
+### Other Changes
+- Python 3.6 is no longer supported. Please use Python version 3.7 or later.
+- Key Vault API version `7.4` is now the default
+- Updated minimum `azure-core` version to 1.24.0
+- Dropped `msrest` requirement
+- Added requirement for `isodate>=0.6.1` (`isodate` was required by `msrest`)
+- Added requirement for `typing-extensions>=4.0.1`
+
+## 4.6.0 (2022-09-19)
+
+### Breaking Changes
+- Clients verify the challenge resource matches the vault domain. This should affect few customers,
+  who can provide `verify_challenge_resource=False` to client constructors to disable.
+  See https://aka.ms/azsdk/blog/vault-uri for more information.
+
+## 4.5.1 (2022-08-11)
+
+### Other Changes
+- Documentation improvements 
+  ([#25039](https://github.com/Azure/azure-sdk-for-python/issues/25039))
 
 ## 4.5.0b1 (2022-06-07)
 

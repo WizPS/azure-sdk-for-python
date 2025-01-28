@@ -15,13 +15,13 @@ from azure.data.tables._authentication import BearerTokenChallengePolicy
 import pytest
 
 from devtools_testutils import AzureRecordedTestCase, recorded_by_proxy, is_live
-from devtools_testutils.sanitizers import add_general_regex_sanitizer
 from preparers import tables_decorator
 from _shared.testcase import TableTestCase
 
 # Try to use azure.core.rest request if azure-core version supports it -- fall back to basic request
 try:
     from azure.core.rest import HttpRequest as RestHttpRequest
+
     HTTP_REQUESTS = [PipelineTransportHttpRequest, RestHttpRequest]
 except ModuleNotFoundError:
     HTTP_REQUESTS = [PipelineTransportHttpRequest]
@@ -35,7 +35,7 @@ class TestTableChallengeAuth(AzureRecordedTestCase, TableTestCase):
 
         Recorded using an incorrect tenant for the credential provided to our client. To run this live, ensure that the
         service principal used for testing is enabled for multitenant authentication
-        (https://docs.microsoft.com/azure/active-directory/develop/howto-convert-app-to-be-multi-tenant). Set the
+        (https://learn.microsoft.com/azure/active-directory/develop/howto-convert-app-to-be-multi-tenant). Set the
         TABLES_TENANT_ID environment variable to a different, existing tenant than the one the storage account exists
         in, and set CHALLENGE_TABLES_TENANT_ID to the tenant that the storage account exists in.
         """
@@ -57,7 +57,7 @@ class TestTableChallengeAuth(AzureRecordedTestCase, TableTestCase):
 
         Recorded using an incorrect tenant for the credential provided to our client. To run this live, ensure that the
         service principal used for testing is enabled for multitenant authentication
-        (https://docs.microsoft.com/azure/active-directory/develop/howto-convert-app-to-be-multi-tenant). Set the
+        (https://learn.microsoft.com/azure/active-directory/develop/howto-convert-app-to-be-multi-tenant). Set the
         TABLES_TENANT_ID environment variable to a different, existing tenant than the one the storage account exists
         in, and set CHALLENGE_TABLES_TENANT_ID to the tenant that the storage account exists in.
         """
@@ -116,7 +116,7 @@ def test_challenge_policy_uses_scopes_and_tenant(http_request):
                 return AccessToken(expected_token, 0)
             raise ValueError("unexpected token request")
 
-        credential = Mock(get_token=Mock(wraps=get_token))
+        credential = Mock(spec_set=["get_token"], get_token=Mock(wraps=get_token))
         policy = BearerTokenChallengePolicy(credential, "scope")
         pipeline = Pipeline(policies=[policy], transport=Mock(send=send))
         pipeline.run(http_request("GET", "https://localhost"))
@@ -136,14 +136,14 @@ def test_challenge_policy_uses_scopes_and_tenant(http_request):
     # this challenge separates the authorization server and resource with only spaces in the WWW-Authenticate header
     challenge_without_commas = Mock(
         status_code=401,
-        headers={"WWW-Authenticate": f'Bearer authorization={endpoint} resource={resource}'},
+        headers={"WWW-Authenticate": f"Bearer authorization={endpoint} resource={resource}"},
     )
     test_with_challenge(challenge_without_commas, scope, tenant)
 
     # this challenge gives an AADv2 scope, ending with "/.default", instead of an AADv1 resource
     challenge_with_scope = Mock(
         status_code=401,
-        headers={"WWW-Authenticate": f'Bearer authorization={endpoint} scope={scope}'},
+        headers={"WWW-Authenticate": f"Bearer authorization={endpoint} scope={scope}"},
     )
     test_with_challenge(challenge_with_scope, scope, tenant)
 
@@ -188,7 +188,7 @@ def test_challenge_policy_disable_tenant_discovery(http_request):
                 return AccessToken(bad_token, 0)
             raise ValueError("unexpected token request")
 
-        credential = Mock(get_token=Mock(wraps=get_token))
+        credential = Mock(spec_set=["get_token"], get_token=Mock(wraps=get_token))
         policy = BearerTokenChallengePolicy(credential, "scope", discover_tenant=False)
         pipeline = Pipeline(policies=[policy], transport=Mock(send=send))
         pipeline.run(http_request("GET", "https://localhost"))
@@ -248,8 +248,8 @@ def test_challenge_policy_disable_scopes_discovery(http_request):
                 return AccessToken(bad_token, 0)
             raise ValueError("unexpected token request")
 
-        credential = Mock(get_token=Mock(wraps=get_token))
-        policy = BearerTokenChallengePolicy(credential, "scope", discover_scopes=False)
+        credential = Mock(spec_set=["get_token"], get_token=Mock(wraps=get_token))
+        policy = BearerTokenChallengePolicy(credential, ["scope1", "scope2"], discover_scopes=False)
         pipeline = Pipeline(policies=[policy], transport=Mock(send=send))
         pipeline.run(http_request("GET", "https://localhost"))
 
@@ -299,9 +299,9 @@ def test_challenge_policy_disable_any_discovery(http_request):
                 return AccessToken(bad_token, 0)
             raise ValueError("unexpected token request")
 
-        credential = Mock(get_token=Mock(wraps=get_token))
+        credential = Mock(spec_set=["get_token"], get_token=Mock(wraps=get_token))
         policy = BearerTokenChallengePolicy(
-            credential, "scope", discover_tenant=False, discover_scopes=False
+            credential, ["scope1", "scope2"], discover_tenant=False, discover_scopes=False
         )
         pipeline = Pipeline(policies=[policy], transport=Mock(send=send))
         pipeline.run(http_request("GET", "https://localhost"))
@@ -360,7 +360,7 @@ def test_challenge_policy_no_scope_in_challenge(http_request):
                 return AccessToken(bad_token, 0)
             raise ValueError("unexpected token request")
 
-        credential = Mock(get_token=Mock(wraps=get_token))
+        credential = Mock(spec_set=["get_token"], get_token=Mock(wraps=get_token))
         policy = BearerTokenChallengePolicy(credential, "scope")
         pipeline = Pipeline(policies=[policy], transport=Mock(send=send))
         pipeline.run(http_request("GET", "https://localhost"))

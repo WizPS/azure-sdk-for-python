@@ -25,12 +25,14 @@ These sample programs show common scenarios for the Tables client's offerings.
 |[sample_query_tables.py][query_tables] and [sample_query_tables_async.py][query_tables_async]|Querying tables in a storage account|
 |[sample_update_upsert_merge_entities.py][update_upsert_merge] and [sample_update_upsert_merge_entities_async.py][update_upsert_merge_async]| Updating, upserting, and merging entities|
 |[sample_batching.py][sample_batch] and [sample_batching_async.py][sample_batch_async]| Committing many requests in a single batch|
+|[sample_copy_table.py][sample_copy_table] and [sample_copy_table_async.py][sample_copy_table_async]| Copying a table between Tables table and Storage blob|
+|[sample_get_entity_etag_and_timestamp.py][sample_get_entity_etag_and_timestamp] and [sample_get_entity_etag_and_timestamp_async.py][sample_get_entity_etag_and_timestamp_async]| Getting entity's etag and timestamp|
 
 
 ### Prerequisites
-* Python 3.6 or later is required to use this package.
+* Python 3.8 or later is required to use this package.
 * You must have an [Azure subscription](https://azure.microsoft.com/free/) and either an
-[Azure storage account](https://docs.microsoft.com/azure/storage/common/storage-account-overview) or an [Azure Cosmos Account](https://docs.microsoft.com/azure/cosmos-db/account-overview) to use this package.
+[Azure storage account](https://learn.microsoft.com/azure/storage/common/storage-account-overview) or an [Azure Cosmos Account](https://learn.microsoft.com/azure/cosmos-db/account-overview) to use this package.
 
 ## Setup
 
@@ -148,8 +150,8 @@ what you can do with the Azure Data Tables client library.
 
 
 <!-- LINKS -->
-[api_reference_documentation]: https://docs.microsoft.com/rest/api/storageservices/table-service-rest-api
-[query_reference_documentation]: https://docs.microsoft.com/rest/api/storageservices/querying-tables-and-entities
+[api_reference_documentation]: https://learn.microsoft.com/rest/api/storageservices/table-service-rest-api
+[query_reference_documentation]: https://learn.microsoft.com/rest/api/storageservices/querying-tables-and-entities
 
 [sample_authentication]:https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/tables/azure-data-tables/samples/sample_authentication.py
 [sample_authentication_async]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/tables/azure-data-tables/samples/async_samples/sample_authentication_async.py
@@ -174,4 +176,11 @@ what you can do with the Azure Data Tables client library.
 
 [sample_batch]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/tables/azure-data-tables/samples/sample_batching.py
 [sample_batch_async]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/tables/azure-data-tables/samples/async_samples/sample_batching_async.py
+
+[sample_copy_table]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/tables/azure-data-tables/samples/sample_copy_table.py
+[sample_copy_table_async]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/tables/azure-data-tables/samples/async_samples/sample_copy_table_async.py
+
+[sample_get_entity_etag_and_timestamp]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/tables/azure-data-tables/samples/sample_get_entity_etag_and_timestamp.py
+[sample_get_entity_etag_and_timestamp_async]: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/tables/azure-data-tables/samples/async_samples/sample_get_entity_etag_and_timestamp_async.py
+
 ![Impressions](https://azure-sdk-impressions.azurewebsites.net/api/impressions/azure-sdk-for-python/sdk/tables/azure-data-tables/README.png)

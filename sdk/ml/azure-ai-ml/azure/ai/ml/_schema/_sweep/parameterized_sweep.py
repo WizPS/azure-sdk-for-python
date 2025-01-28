@@ -1,10 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from azure.ai.ml._schema import NestedField, PathAwareSchema
-from .sweep_fields_provider import SamplingAlgorithmField, SearchSpaceField, EarlyTerminationField
-from .sweep_objective import SweepObjectiveSchema
+
+from azure.ai.ml._schema.core.fields import ExperimentalField, NestedField, PathAwareSchema
+from azure.ai.ml._schema.job_resource_configuration import JobResourceConfigurationSchema
+
 from ..job.job_limits import SweepJobLimitsSchema
+from ..queue_settings import QueueSettingsSchema
+from .sweep_fields_provider import EarlyTerminationField, SamplingAlgorithmField, SearchSpaceField
+from .sweep_objective import SweepObjectiveSchema
 
 
 class ParameterizedSweepSchema(PathAwareSchema):
@@ -22,3 +26,5 @@ class ParameterizedSweepSchema(PathAwareSchema):
         SweepJobLimitsSchema,
         required=True,
     )
+    queue_settings = ExperimentalField(NestedField(QueueSettingsSchema))
+    resources = NestedField(JobResourceConfigurationSchema)

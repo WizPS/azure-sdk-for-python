@@ -24,12 +24,14 @@ database service.
 """
 
 import threading
+from urllib.parse import urlparse
 
-from six.moves.urllib.parse import urlparse
+from azure.core.exceptions import AzureError
 
 from . import _constants as constants
 from . import exceptions
 from ._location_cache import LocationCache
+
 
 # pylint: disable=protected-access
 
@@ -56,8 +58,9 @@ class _GlobalEndpointManager(object):
         self.refresh_needed = False
         self.refresh_lock = threading.RLock()
         self.last_refresh_time = 0
+        self._database_account_cache = None
 
-    def get_refresh_time_interval_in_ms_stub(self):  # pylint: disable=no-self-use
+    def get_refresh_time_interval_in_ms_stub(self):
         return constants._Constants.DefaultUnavailableLocationExpirationTime
 
     def get_write_endpoint(self):
@@ -89,29 +92,29 @@ class _GlobalEndpointManager(object):
         self.refresh_endpoint_list(database_account)
 
     def refresh_endpoint_list(self, database_account, **kwargs):
-        with self.refresh_lock:
-            # if refresh is not needed or refresh is already taking place, return
-            if not self.refresh_needed:
-                return
-            try:
-                self._refresh_endpoint_list_private(database_account, **kwargs)
-            except Exception as e:
-                raise e
+        if self.location_cache.current_time_millis() - self.last_refresh_time > self.refresh_time_interval_in_ms:
+            self.refresh_needed = True
+        if self.refresh_needed:
+            with self.refresh_lock:
+                # if refresh is not needed or refresh is already taking place, return
+                if not self.refresh_needed:
+                    return
+                try:
+                    self._refresh_endpoint_list_private(database_account, **kwargs)
+                except Exception as e:
+                    raise e
 
     def _refresh_endpoint_list_private(self, database_account=None, **kwargs):
         if database_account:
             self.location_cache.perform_on_database_account_read(database_account)
             self.refresh_needed = False
-
-        if (
-            self.location_cache.should_refresh_endpoints()
-            and self.location_cache.current_time_millis() - self.last_refresh_time > self.refresh_time_interval_in_ms
-        ):
-            if not database_account:
+            self.last_refresh_time = self.location_cache.current_time_millis()
+        else:
+            if self.location_cache.should_refresh_endpoints() or self.refresh_needed:
+                self.refresh_needed = False
+                self.last_refresh_time = self.location_cache.current_time_millis()
                 database_account = self._GetDatabaseAccount(**kwargs)
                 self.location_cache.perform_on_database_account_read(database_account)
-                self.last_refresh_time = self.location_cache.current_time_millis()
-                self.refresh_needed = False
 
     def _GetDatabaseAccount(self, **kwargs):
         """Gets the database account.
@@ -119,9 +122,12 @@ class _GlobalEndpointManager(object):
         First tries by using the default endpoint, and if that doesn't work,
         use the endpoints for the preferred locations in the order they are
         specified, to get the database account.
+        :returns: A `DatabaseAccount` instance representing the Cosmos DB Database Account.
+        :rtype: ~azure.cosmos.DatabaseAccount
         """
         try:
             database_account = self._GetDatabaseAccountStub(self.DefaultEndpoint, **kwargs)
+            self._database_account_cache = database_account
             return database_account
         # If for any reason(non-globaldb related), we are not able to get the database
         # account from the above call to GetDatabaseAccount, we would try to get this
@@ -129,21 +135,24 @@ class _GlobalEndpointManager(object):
         # specified (by creating a locational endpoint) and keeping eating the exception
         # until we get the database account and return None at the end, if we are not able
         # to get that info from any endpoints
-        except exceptions.CosmosHttpResponseError:
+        except (exceptions.CosmosHttpResponseError, AzureError):
             for location_name in self.PreferredLocations:
                 locational_endpoint = _GlobalEndpointManager.GetLocationalEndpoint(self.DefaultEndpoint, location_name)
                 try:
                     database_account = self._GetDatabaseAccountStub(locational_endpoint, **kwargs)
+                    self._database_account_cache = database_account
                     return database_account
-                except exceptions.CosmosHttpResponseError:
+                except (exceptions.CosmosHttpResponseError, AzureError):
                     pass
-
-            return None
+            raise
 
     def _GetDatabaseAccountStub(self, endpoint, **kwargs):
         """Stub for getting database account from the client.
-
         This can be used for mocking purposes as well.
+
+        :param str endpoint: the endpoint being used to get the database account
+        :returns: A `DatabaseAccount` instance representing the Cosmos DB Database Account.
+        :rtype: ~azure.cosmos.DatabaseAccount
         """
         return self.Client.GetDatabaseAccount(endpoint, **kwargs)
 

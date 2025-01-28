@@ -2,464 +2,442 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from time import time
-from typing import Iterable, Dict, Union
-import logging
-from azure.ai.ml._arm_deployments.arm_helper import get_template
-from azure.core.polling import LROPoller
+# pylint: disable=protected-access
+
+from typing import Any, Dict, Iterable, List, Optional, Union, cast
+
+from marshmallow import ValidationError
+
+from azure.ai.ml._restclient.v2024_10_01_preview import AzureMachineLearningWorkspaces as ServiceClient102024Preview
+from azure.ai.ml._restclient.v2024_10_01_preview.models import ManagedNetworkProvisionOptions
 from azure.ai.ml._scope_dependent_operations import OperationsContainer, OperationScope
-from azure.ai.ml._restclient.v2022_01_01_preview import AzureMachineLearningWorkspaces as ServiceClient012022Preview
-from azure.ai.ml._restclient.v2022_01_01_preview.models import (
-    ListWorkspaceKeysResult,
-    DiagnoseWorkspaceParameters,
+from azure.ai.ml._telemetry import ActivityType, monitor_with_activity
+from azure.ai.ml._utils._http_utils import HttpPipeline
+from azure.ai.ml._utils._logger_utils import OpsLogger
+from azure.ai.ml._utils.utils import (
+    _get_workspace_base_url,
+    get_resource_and_group_name_from_resource_id,
+    get_resource_group_name_from_resource_group_id,
+    modified_operation_client,
+)
+from azure.ai.ml.constants._common import AzureMLResourceType, Scope, WorkspaceKind
+from azure.ai.ml.entities import (
     DiagnoseRequestProperties,
-    WorkspaceUpdateParameters,
+    DiagnoseResponseResult,
+    DiagnoseResponseResultValue,
+    DiagnoseWorkspaceParameters,
+    ManagedNetworkProvisionStatus,
+    Workspace,
+    WorkspaceKeys,
 )
-from azure.ai.ml._arm_deployments import ArmDeploymentExecutor
-from azure.identity import ChainedTokenCredential
-from azure.ai.ml.constants import ArmConstants, WorkspaceResourceConstants, LROConfigurations
-from azure.ai.ml._utils._workspace_utils import (
-    delete_resource_by_arm_id,
-    get_deployment_name,
-    get_resource_group_location,
-    get_name_for_dependent_resource,
-    get_resource_and_group_name,
-)
-from azure.ai.ml.entities import Workspace
-from marshmallow import RAISE
-from azure.core.exceptions import ResourceExistsError
-from azure.ai.ml._utils._azureml_polling import AzureMLPolling, polling_wait
-from azure.ai.ml._version import VERSION
+from azure.ai.ml.entities._credentials import IdentityConfiguration
+from azure.core.credentials import TokenCredential
+from azure.core.exceptions import HttpResponseError
+from azure.core.polling import LROPoller
+from azure.core.tracing.decorator import distributed_trace
 
-from azure.ai.ml._telemetry import AML_INTERNAL_LOGGER_NAMESPACE, ActivityType, monitor_with_activity
-from azure.ai.ml._ml_exceptions import ValidationException, ErrorCategory, ErrorTarget
+from ._workspace_operations_base import WorkspaceOperationsBase
 
-logger = logging.getLogger(AML_INTERNAL_LOGGER_NAMESPACE + __name__)
-logger.propagate = False
-module_logger = logging.getLogger(__name__)
+ops_logger = OpsLogger(__name__)
+module_logger = ops_logger.module_logger
 
 
-class WorkspaceOperations:
-    """
-    WorkspaceOperations
+class WorkspaceOperations(WorkspaceOperationsBase):
+    """Handles workspaces and its subclasses, hubs and projects.
 
-    You should not instantiate this class directly. Instead, you should create an MLClient instance that instantiates it for you and attaches it as an attribute.
+    You should not instantiate this class directly. Instead, you should create
+    an MLClient instance that instantiates it for you and attaches it as an attribute.
     """
 
     def __init__(
         self,
         operation_scope: OperationScope,
-        service_client: ServiceClient012022Preview,
+        service_client: ServiceClient102024Preview,
         all_operations: OperationsContainer,
-        credentials: ChainedTokenCredential = None,
-        **kwargs: Dict,
+        credentials: Optional[TokenCredential] = None,
+        **kwargs: Any,
     ):
-        if "app_insights_handler" in kwargs:
-            logger.addHandler(kwargs.pop("app_insights_handler"))
+        self.dataplane_workspace_operations = (
+            kwargs.pop("dataplane_client").workspaces if kwargs.get("dataplane_client") else None
+        )
+        self._requests_pipeline: HttpPipeline = kwargs.pop("requests_pipeline", None)
+        ops_logger.update_filter()
+        self._provision_network_operation = service_client.managed_network_provisions
+        super().__init__(
+            operation_scope=operation_scope,
+            service_client=service_client,
+            all_operations=all_operations,
+            credentials=credentials,
+            **kwargs,
+        )
 
-        self._subscription_id = operation_scope.subscription_id
-        self._resource_group_name = operation_scope.resource_group_name
-        self._default_workspace_name = operation_scope.workspace_name
-        self._all_operations = all_operations
-        self._operation = service_client.workspaces
-        self._credentials = credentials
-        self._init_kwargs = kwargs
-        self.storage = None
-        self.appInsights = None
-        self.keyVault = None
-        self.resources_being_deployed = {}
-        self.containerRegistry = "none"
+    @monitor_with_activity(ops_logger, "Workspace.List", ActivityType.PUBLICAPI)
+    def list(
+        self, *, scope: str = Scope.RESOURCE_GROUP, filtered_kinds: Optional[Union[str, List[str]]] = None
+    ) -> Iterable[Workspace]:
+        """List all Workspaces that the user has access to in the current resource group or subscription.
 
-    @monitor_with_activity(logger, "Workspace.List", ActivityType.PUBLICAPI)
-    def list(self, *, scope: str = "resource_group") -> Iterable[Workspace]:
-        """List all workspaces that the user has access to in the current resource group or subscription
-
-        :param scope: scope of the listing, "resource_group" or "subscription", defaults to "resource_group"
-        :type scope: str, optional
+        :keyword scope: scope of the listing, "resource_group" or "subscription", defaults to "resource_group"
+        :paramtype scope: str
+        :keyword filtered_kinds: The kinds of workspaces to list. If not provided, all workspaces varieties will
+            be listed. Accepts either a single kind, or a list of them.
+            Valid kind options include: "default", "project", and "hub".
         :return: An iterator like instance of Workspace objects
-        :rtype: ~azure.core.paging.ItemPaged[Workspace]
+        :rtype: ~azure.core.paging.ItemPaged[~azure.ai.ml.entities.Workspace]
+
+        .. admonition:: Example:
+
+            .. literalinclude:: ../samples/ml_samples_workspace.py
+                :start-after: [START workspace_list]
+                :end-before: [END workspace_list]
+                :language: python
+                :dedent: 8
+                :caption: List the workspaces by resource group or subscription.
         """
 
-        if scope == "subscription":
-            return self._operation.list_by_subscription(
-                cls=lambda objs: [Workspace._from_rest_object(obj) for obj in objs]
-            )
-        else:
-            return self._operation.list_by_resource_group(
-                self._resource_group_name, cls=lambda objs: [Workspace._from_rest_object(obj) for obj in objs]
-            )
+        # Kind should be converted to a comma-separating string if multiple values are supplied.
+        formatted_kinds = filtered_kinds
+        if filtered_kinds and not isinstance(filtered_kinds, str):
+            formatted_kinds = ",".join(filtered_kinds)  # type: ignore[arg-type]
 
-    @monitor_with_activity(logger, "Workspace.Get", ActivityType.PUBLICAPI)
-    def get(self, name: str = None, **kwargs: Dict) -> Workspace:
-        """Get a workspace by name.
+        if scope == Scope.SUBSCRIPTION:
+            return cast(
+                Iterable[Workspace],
+                self._operation.list_by_subscription(
+                    cls=lambda objs: [Workspace._from_rest_object(obj) for obj in objs],
+                    kind=formatted_kinds,
+                ),
+            )
+        return cast(
+            Iterable[Workspace],
+            self._operation.list_by_resource_group(
+                self._resource_group_name,
+                cls=lambda objs: [Workspace._from_rest_object(obj) for obj in objs],
+                kind=formatted_kinds,
+            ),
+        )
+
+    @monitor_with_activity(ops_logger, "Workspace.Get", ActivityType.PUBLICAPI)
+    @distributed_trace
+    # pylint: disable=arguments-renamed
+    def get(self, name: Optional[str] = None, **kwargs: Dict) -> Optional[Workspace]:
+        """Get a Workspace by name.
 
         :param name: Name of the workspace.
         :type name: str
         :return: The workspace with the provided name.
-        :rtype: Workspace
+        :rtype: ~azure.ai.ml.entities.Workspace
+
+        .. admonition:: Example:
+
+            .. literalinclude:: ../samples/ml_samples_workspace.py
+                :start-after: [START workspace_get]
+                :end-before: [END workspace_get]
+                :language: python
+                :dedent: 8
+                :caption: Get the workspace with the given name.
         """
 
-        workspace_name = self._check_workspace_name(name)
-        resource_group = kwargs.get("resource_group") or self._resource_group_name
-        obj = self._operation.get(resource_group, workspace_name)
-        return Workspace._from_rest_object(obj)
+        return super().get(workspace_name=name, **kwargs)
 
-    @monitor_with_activity(logger, "Workspace.List_Keys", ActivityType.PUBLICAPI)
-    def list_keys(self, name: str = None) -> ListWorkspaceKeysResult:
-        """List keys for the workspace.
+    @monitor_with_activity(ops_logger, "Workspace.Get_Keys", ActivityType.PUBLICAPI)
+    @distributed_trace
+    def get_keys(self, name: Optional[str] = None) -> Optional[WorkspaceKeys]:
+        """Get WorkspaceKeys by workspace name.
 
         :param name: Name of the workspace.
         :type name: str
-        :return: A list of keys.
-        :rtype: ListWorkspaceKeysResult
+        :return: Keys of workspace dependent resources.
+        :rtype: ~azure.ai.ml.entities.WorkspaceKeys
+
+        .. admonition:: Example:
+
+            .. literalinclude:: ../samples/ml_samples_workspace.py
+                :start-after: [START workspace_get_keys]
+                :end-before: [END workspace_get_keys]
+                :language: python
+                :dedent: 8
+                :caption: Get the workspace keys for the workspace with the given name.
         """
         workspace_name = self._check_workspace_name(name)
-        return self._operation.list_keys(self._resource_group_name, workspace_name)
+        obj = self._operation.list_keys(self._resource_group_name, workspace_name)
+        return WorkspaceKeys._from_rest_object(obj)
 
-    @monitor_with_activity(logger, "Workspace.BeginSyncKeys", ActivityType.PUBLICAPI)
-    def begin_sync_keys(self, name: str = None, **kwargs: Dict) -> LROPoller:
-        """Triggers the workspace to immediately synchronize keys.
-        If keys for any resource in the workspace are changed, it can take around an hour for them to automatically be updated. This function enables keys to be updated upon request. An example scenario is needing immediate access to storage after regenerating storage keys.
+    @monitor_with_activity(ops_logger, "Workspace.BeginSyncKeys", ActivityType.PUBLICAPI)
+    @distributed_trace
+    def begin_sync_keys(self, name: Optional[str] = None) -> LROPoller[None]:
+        """Triggers the workspace to immediately synchronize keys. If keys for any resource in the workspace are
+        changed, it can take around an hour for them to automatically be updated. This function enables keys to be
+        updated upon request. An example scenario is needing immediate access to storage after regenerating storage
+        keys.
 
         :param name: Name of the workspace.
         :type name: str
+        :return: An instance of LROPoller that returns either None or the sync keys result.
+        :rtype: ~azure.core.polling.LROPoller[None]
+
+        .. admonition:: Example:
+
+            .. literalinclude:: ../samples/ml_samples_workspace.py
+                :start-after: [START workspace_sync_keys]
+                :end-before: [END workspace_sync_keys]
+                :language: python
+                :dedent: 8
+                :caption: Begin sync keys for the workspace with the given name.
         """
-
-        no_wait = kwargs.get("no_wait", False)
-
         workspace_name = self._check_workspace_name(name)
-        poller = self._operation.begin_resync_keys(self._resource_group_name, workspace_name)
+        return self._operation.begin_resync_keys(self._resource_group_name, workspace_name)
 
-        if no_wait:
-            return poller
-        else:
-            polling_wait(poller, message="Waiting for the workspace keys sync.")
+    @monitor_with_activity(ops_logger, "Workspace.BeginProvisionNetwork", ActivityType.PUBLICAPI)
+    @distributed_trace
+    def begin_provision_network(
+        self,
+        *,
+        workspace_name: Optional[str] = None,
+        include_spark: bool = False,
+        **kwargs: Any,
+    ) -> LROPoller[ManagedNetworkProvisionStatus]:
+        """Triggers the workspace to provision the managed network. Specifying spark enabled
+        as true prepares the workspace managed network for supporting Spark.
 
-    @monitor_with_activity(logger, "Workspace.BeginCreate", ActivityType.PUBLICAPI)
-    def begin_create(self, workspace: Workspace, update_dependent_resources: bool = False, **kwargs: Dict) -> LROPoller:
+        :keyword workspace_name: Name of the workspace.
+        :paramtype workspace_name: str
+        :keyword include_spark: Whether the workspace managed network should prepare to support Spark.
+        :paramtype include_space: bool
+        :return: An instance of LROPoller.
+        :rtype: ~azure.core.polling.LROPoller[~azure.ai.ml.entities.ManagedNetworkProvisionStatus]
+
+        .. admonition:: Example:
+
+            .. literalinclude:: ../samples/ml_samples_workspace.py
+                :start-after: [START workspace_provision_network]
+                :end-before: [END workspace_provision_network]
+                :language: python
+                :dedent: 8
+                :caption: Begin provision network for a workspace with managed network.
+        """
+        workspace_name = self._check_workspace_name(workspace_name)
+
+        poller = self._provision_network_operation.begin_provision_managed_network(
+            self._resource_group_name,
+            workspace_name,
+            ManagedNetworkProvisionOptions(include_spark=include_spark),
+            polling=True,
+            cls=lambda response, deserialized, headers: ManagedNetworkProvisionStatus._from_rest_object(deserialized),
+            **kwargs,
+        )
+        module_logger.info("Provision network request initiated for workspace: %s\n", workspace_name)
+        return poller
+
+    @monitor_with_activity(ops_logger, "Workspace.BeginCreate", ActivityType.PUBLICAPI)
+    @distributed_trace
+    # pylint: disable=arguments-differ
+    def begin_create(
+        self,
+        workspace: Workspace,
+        update_dependent_resources: bool = False,
+        **kwargs: Any,
+    ) -> LROPoller[Workspace]:
         """Create a new Azure Machine Learning Workspace.
 
         Returns the workspace if already exists.
 
         :param workspace: Workspace definition.
-        :type workspace: Workspace
+        :type workspace: ~azure.ai.ml.entities.Workspace
+        :param update_dependent_resources: Whether to update dependent resources, defaults to False.
         :type update_dependent_resources: boolean
-        :return: A poller to track the operation status.
-        :rtype: LROPoller
+        :return: An instance of LROPoller that returns a Workspace.
+        :rtype: ~azure.core.polling.LROPoller[~azure.ai.ml.entities.Workspace]
+
+        .. admonition:: Example:
+
+            .. literalinclude:: ../samples/ml_samples_workspace.py
+                :start-after: [START workspace_begin_create]
+                :end-before: [END workspace_begin_create]
+                :language: python
+                :dedent: 8
+                :caption: Begin create for a workspace.
         """
-        existing_workspace = None
-        resource_group = workspace.resource_group or self._resource_group_name
+        # Add hub values to project if possible
+        if workspace._kind == WorkspaceKind.PROJECT:
+            try:
+                parent_name = workspace._hub_id.split("/")[-1] if workspace._hub_id else ""
+                parent = self.get(parent_name)
+                if parent:
+                    # Project location can not differ from hub, so try to force match them if possible.
+                    workspace.location = parent.location
+                    # Project's technically don't save their PNA, since it implicitly matches their parent's.
+                    # However, some PNA-dependent code is run server-side before that alignment is made, so make sure
+                    # they're aligned before the request hits the server.
+                    workspace.public_network_access = parent.public_network_access
+            except HttpResponseError:
+                module_logger.warning("Failed to get parent hub for project, some values won't be transferred:")
         try:
-            existing_workspace = self.get(workspace.name, resource_group=resource_group)
-        except Exception:
-            pass
+            return super().begin_create(workspace, update_dependent_resources=update_dependent_resources, **kwargs)
+        except HttpResponseError as error:
+            if error.status_code == 403 and workspace._kind == WorkspaceKind.PROJECT:
+                resource_group = kwargs.get("resource_group") or self._resource_group_name
+                hub_name, _ = get_resource_and_group_name_from_resource_id(workspace._hub_id)
+                rest_workspace_obj = self._operation.get(resource_group, hub_name)
+                hub_default_project_resource_group = get_resource_group_name_from_resource_group_id(
+                    rest_workspace_obj.workspace_hub_config.default_workspace_resource_group
+                )
+                # we only want to try joining the workspaceHub when the default workspace resource group
+                # is same with the user provided resource group.
+                if hub_default_project_resource_group == resource_group:
+                    log_msg = (
+                        "User lacked permission to create project workspace,"
+                        + "trying to join the workspaceHub default resource group."
+                    )
+                    module_logger.info(log_msg)
+                    return self._begin_join(workspace, **kwargs)
+            raise error
 
-        # idempotent behavior
-        if existing_workspace:
-            if workspace.tags.get("createdByToolkit") is not None:
-                workspace.tags.pop("createdByToolkit")
-            existing_workspace.tags.update(workspace.tags)
-            workspace.tags = existing_workspace.tags
-            workspace.container_registry = workspace.container_registry or existing_workspace.container_registry
-            workspace.application_insights = workspace.application_insights or existing_workspace.application_insights
-            return self.begin_update(workspace, update_dependent_resources=update_dependent_resources, kwargs=kwargs)
-
-        # add tag in the workspace to indicate which sdk version the workspace is created from
-        if workspace.tags is None:
-            workspace.tags = {}
-        if workspace.tags.get("createdByToolkit") is None:
-            workspace.tags["createdByToolkit"] = "sdk-v2-{}".format(VERSION)
-
-        self._populate_arm_paramaters(workspace)
-
-        arm_submit = ArmDeploymentExecutor(
-            credentials=self._credentials,
-            resource_group_name=resource_group,
-            subscription_id=self._subscription_id,
-            deployment_name=get_deployment_name(workspace.name),
-        )
-
-        no_wait = kwargs.get("no_wait", False)
-        # deploy_resource() blocks for the poller to succeed if wait is True
-        poller = arm_submit.deploy_resource(
-            template=self.template,
-            resources_being_deployed=self.resources_being_deployed,
-            parameters=self.param,
-            wait=not no_wait,
-        )
-
-        return poller if no_wait else self.get(workspace.name, resource_group=resource_group)
-
-    @monitor_with_activity(logger, "Workspace.BeginUpdate", ActivityType.PUBLICAPI)
+    @monitor_with_activity(ops_logger, "Workspace.BeginUpdate", ActivityType.PUBLICAPI)
+    @distributed_trace
     def begin_update(
-        self, workspace: Workspace, *, update_dependent_resources: bool = False, **kwargs: Dict
-    ) -> Union[LROPoller, Workspace]:
-        """Update friendly name, description or tags of a workspace.
+        self,
+        workspace: Workspace,
+        *,
+        update_dependent_resources: bool = False,
+        **kwargs: Any,
+    ) -> LROPoller[Workspace]:
+        """Updates a Azure Machine Learning Workspace.
 
-        :param workspace: Workspace resource.
-        :param update_dependent_resources: gives your consent to update the workspace dependent resources. Note that updating the workspace-attached Azure Container Registry resource may break lineage of previous jobs or your ability to rerun earlier jobs in this workspace. Also, updating the workspace-attached Azure Application Insights resource may break lineage of deployed inference endpoints this workspace. Only set this argument if you are sure that you want to perform this operation. If this argument is not set, the command to update Azure Container Registry and Azure Application Insights will fail.
-        :param application_insights: Application insights resource for workspace.
-        :param container_registry: Container registry resource for workspace.
-        :type workspace: Workspace
-        :return: A poller to track the operation status.
-        :rtype: LROPoller
+        :param workspace: Workspace definition.
+        :type workspace: ~azure.ai.ml.entities.Workspace
+        :keyword update_dependent_resources: Whether to update dependent resources, defaults to False.
+        :paramtype update_dependent_resources: boolean
+        :return: An instance of LROPoller that returns a Workspace.
+        :rtype: ~azure.core.polling.LROPoller[~azure.ai.ml.entities.Workspace]
+
+        .. admonition:: Example:
+
+            .. literalinclude:: ../samples/ml_samples_workspace.py
+                :start-after: [START workspace_begin_update]
+                :end-before: [END workspace_begin_update]
+                :language: python
+                :dedent: 8
+                :caption: Begin update for a workspace.
         """
-        update_param = WorkspaceUpdateParameters(
-            tags=workspace.tags,
-            description=kwargs.get("description", workspace.description),
-            friendly_name=kwargs.get("display_name", workspace.display_name),
-            public_network_access=kwargs.get("public_network_access", workspace.public_network_access),
-            image_build_compute=kwargs.get("image_build_compute", workspace.image_build_compute),
-        )
+        return super().begin_update(workspace, update_dependent_resources=update_dependent_resources, **kwargs)
 
-        update_dependent_resources = update_dependent_resources
-        application_insights = kwargs.get("application_insights", workspace.application_insights)
-        container_registry = kwargs.get("container_registry", workspace.container_registry)
-        old_workspace = self.get(workspace.name, **kwargs)
-        if container_registry != old_workspace.container_registry and not update_dependent_resources:
-            msg = "Updating the workspace-attached Azure Container Registry resource may break lineage of previous jobs or your ability to rerun earlier jobs in this workspace. Are you sure you want to perform this operation? Include the --update_dependent_resources/-u parameter with this request to confirm."
-            raise ValidationException(
-                message=msg,
-                target=ErrorTarget.WORKSPACE,
-                no_personal_data_message=msg,
-                error_category=ErrorCategory.USER_ERROR,
-            )
-        if application_insights != old_workspace.application_insights and not update_dependent_resources:
-            msg = "Updating the workspace-attached Azure Application Insights resource may break lineage of deployed inference endpoints this workspace. Are you sure you want to perform this operation? Include the --update_dependent_resources/-u parameter with this request to confirm."
-            raise ValidationException(
-                message=msg,
-                target=ErrorTarget.WORKSPACE,
-                no_personal_data_message=msg,
-                error_category=ErrorCategory.USER_ERROR,
-            )
-        update_param.container_registry = container_registry
-        update_param.application_insights = application_insights
-        no_wait = kwargs.get("no_wait", False)
-
-        poller = self._operation.begin_update(
-            self._resource_group_name, workspace.name, update_param, polling=not no_wait
-        )
-
-        if not no_wait:
-            return Workspace._from_rest_object(poller.result())
-        else:
-            module_logger.info(
-                f"Workspace update request initiated. Status can be checked using `az ml workspace show -n {workspace.name}`\n"
-            )
-            return poller
-
-    @monitor_with_activity(logger, "Workspace.BeginDelete", ActivityType.PUBLICAPI)
-    def begin_delete(self, name: str, *, delete_dependent_resources: bool, **kwargs: Dict) -> LROPoller:
-        """Delete a workspace
+    @monitor_with_activity(ops_logger, "Workspace.BeginDelete", ActivityType.PUBLICAPI)
+    @distributed_trace
+    def begin_delete(
+        self, name: str, *, delete_dependent_resources: bool, permanently_delete: bool = False, **kwargs: Dict
+    ) -> LROPoller[None]:
+        """Delete a workspace.
 
         :param name: Name of the workspace
         :type name: str
-        :param delete_dependent_resources: Whether to delete resources associated with the workspace, i.e., container registry, storage account, key vault, and application insights. The default is False. Set to True to delete these resources.
-        :type delete_dependent_resources: bool
+        :keyword delete_dependent_resources: Whether to delete resources associated with the workspace,
+            i.e., container registry, storage account, key vault, application insights, log analytics.
+            The default is False. Set to True to delete these resources.
+        :paramtype delete_dependent_resources: bool
+        :keyword permanently_delete: Workspaces are soft-deleted by default to allow recovery of workspace data.
+            Set this flag to true to override the soft-delete behavior and permanently delete your workspace.
+        :paramtype permanently_delete: bool
         :return: A poller to track the operation status.
-        :rtype: LROPoller
+        :rtype: ~azure.core.polling.LROPoller[None]
+
+        .. admonition:: Example:
+
+            .. literalinclude:: ../samples/ml_samples_workspace.py
+                :start-after: [START workspace_begin_delete]
+                :end-before: [END workspace_begin_delete]
+                :language: python
+                :dedent: 8
+                :caption: Begin permanent (force) deletion for a workspace and delete dependent resources.
         """
-        try:
-            workspace = self.get(name)
-            if delete_dependent_resources:
-                delete_resource_by_arm_id(
-                    self._credentials,
-                    self._subscription_id,
-                    workspace.application_insights,
-                    ArmConstants.AZURE_MGMT_APPINSIGHT_API_VERSION,
-                )
-                delete_resource_by_arm_id(
-                    self._credentials,
-                    self._subscription_id,
-                    workspace.storage_account,
-                    ArmConstants.AZURE_MGMT_STORAGE_API_VERSION,
-                )
-                delete_resource_by_arm_id(
-                    self._credentials,
-                    self._subscription_id,
-                    workspace.key_vault,
-                    ArmConstants.AZURE_MGMT_KEYVAULT_API_VERSION,
-                )
-                delete_resource_by_arm_id(
-                    self._credentials,
-                    self._subscription_id,
-                    workspace.container_registry,
-                    ArmConstants.AZURE_MGMT_CONTAINER_REG_API_VERSION,
-                )
+        return super().begin_delete(
+            name, delete_dependent_resources=delete_dependent_resources, permanently_delete=permanently_delete, **kwargs
+        )
 
-            start_time = time()
-            path_format_arguments = {
-                "endpointName": name,
-                "resourceGroupName": self._resource_group_name,
-                "workspaceName": name,
-            }
-            no_wait = kwargs.get("no_wait", False)
+    @distributed_trace
+    @monitor_with_activity(ops_logger, "Workspace.BeginDiagnose", ActivityType.PUBLICAPI)
+    def begin_diagnose(self, name: str, **kwargs: Dict) -> LROPoller[DiagnoseResponseResultValue]:
+        """Diagnose workspace setup problems.
 
-            delete_poller = self._operation.begin_delete(
-                resource_group_name=self._resource_group_name,
-                workspace_name=name,
-                polling=AzureMLPolling(
-                    LROConfigurations.POLL_INTERVAL,
-                    path_format_arguments=path_format_arguments,
-                    **self._init_kwargs,
+        If your workspace is not working as expected, you can run this diagnosis to
+        check if the workspace has been broken.
+        For private endpoint workspace, it will also help check if the network
+        setup to this workspace and its dependent resource has problems or not.
+
+        :param name: Name of the workspace
+        :type name: str
+        :return: A poller to track the operation status.
+        :rtype: ~azure.core.polling.LROPoller[~azure.ai.ml.entities.DiagnoseResponseResultValue]
+
+        .. admonition:: Example:
+
+            .. literalinclude:: ../samples/ml_samples_workspace.py
+                :start-after: [START workspace_begin_diagnose]
+                :end-before: [END workspace_begin_diagnose]
+                :language: python
+                :dedent: 8
+                :caption: Begin diagnose operation for a workspace.
+        """
+        resource_group = kwargs.get("resource_group") or self._resource_group_name
+        parameters = DiagnoseWorkspaceParameters(value=DiagnoseRequestProperties())._to_rest_object()
+
+        # pylint: disable=unused-argument, docstring-missing-param
+        def callback(_: Any, deserialized: Any, args: Any) -> Optional[DiagnoseResponseResultValue]:
+            """Callback to be called after completion
+
+            :return: DiagnoseResponseResult deserialized.
+            :rtype: ~azure.ai.ml.entities.DiagnoseResponseResult
+            """
+            diagnose_response_result = DiagnoseResponseResult._from_rest_object(deserialized)
+            res = None
+            if diagnose_response_result:
+                res = diagnose_response_result.value
+            return res
+
+        poller = self._operation.begin_diagnose(resource_group, name, parameters, polling=True, cls=callback)
+        module_logger.info("Diagnose request initiated for workspace: %s\n", name)
+        return poller
+
+    @distributed_trace
+    def _begin_join(self, workspace: Workspace, **kwargs: Dict) -> LROPoller[Workspace]:
+        """Join a WorkspaceHub by creating a project workspace under workspaceHub's default resource group.
+
+        :param workspace: Project workspace definition to create
+        :type workspace: Workspace
+        :return: An instance of LROPoller that returns a project Workspace.
+        :rtype: ~azure.core.polling.LROPoller[~azure.ai.ml.entities.Workspace]
+        """
+        if not workspace._hub_id:
+            raise ValidationError(
+                "{0} is not a Project workspace, join operation can only perform with workspaceHub provided".format(
+                    workspace.name
                 )
-                if not no_wait
-                else False,
-                polling_interval=LROConfigurations.POLL_INTERVAL,
+            )
+
+        resource_group = kwargs.get("resource_group") or self._resource_group_name
+        hub_name, _ = get_resource_and_group_name_from_resource_id(workspace._hub_id)
+        rest_workspace_obj = self._operation.get(resource_group, hub_name)
+
+        # override the location to the same as the workspaceHub
+        workspace.location = rest_workspace_obj.location
+        # set this to system assigned so ARM will create MSI
+        if not hasattr(workspace, "identity") or not workspace.identity:
+            workspace.identity = IdentityConfiguration(type="system_assigned")
+
+        workspace_operations = self._all_operations.all_operations[AzureMLResourceType.WORKSPACE]
+        workspace_base_uri = _get_workspace_base_url(workspace_operations, hub_name, self._requests_pipeline)
+
+        # pylint:disable=unused-argument
+        def callback(_: Any, deserialized: Any, args: Any) -> Optional[Workspace]:
+            return Workspace._from_rest_object(deserialized)
+
+        with modified_operation_client(self.dataplane_workspace_operations, workspace_base_uri):
+            result = self.dataplane_workspace_operations.begin_hub_join(  # type: ignore
+                resource_group_name=resource_group,
+                workspace_name=hub_name,
+                project_workspace_name=workspace.name,
+                body=workspace._to_rest_object(),
+                cls=callback,
                 **self._init_kwargs,
             )
-
-            if no_wait:
-                module_logger.info(f"Delete request initiated for workspace: {name}`\n")
-                return delete_poller
-            else:
-                message = f"Deleting workspace {name} "
-                polling_wait(poller=delete_poller, start_time=start_time, message=message)
-        except Exception as response_exception:
-            raise response_exception
-
-    @monitor_with_activity(logger, "Workspace.BeginDiagnose", ActivityType.PUBLICAPI)
-    def begin_diagnose(self, name: str, **kwargs: Dict) -> LROPoller:
-        """Diagnose workspace setup problems
-
-        If your workspace is not working as expected, you can run this diagnosis to check if the workspace has been broken.
-        For private endpoint workspace, it will also help check out if the network setup to this workspace and its dependent resource
-        has problem or not.
-
-        :param name: Name of the workspace
-        :type name: str
-        :return: A poller to track the operation status.
-        :rtype: LROPoller
-        """
-        no_wait = kwargs.get("no_wait", False)
-        parameters = DiagnoseWorkspaceParameters(value=DiagnoseRequestProperties())
-        poller = self._operation.begin_diagnose(self._resource_group_name, name, parameters, polling=not no_wait)
-        if not no_wait:
-            return poller.result().value.as_dict()
-        else:
-            module_logger.info(f"Diagnose request initiated for workspace:{name}`\n")
-            return poller
-
-    def _populate_arm_paramaters(self, workspace: Workspace) -> None:
-        if not workspace.location:
-            workspace.location = get_resource_group_location(
-                self._credentials, self._subscription_id, self._resource_group_name
-            )
-
-        self.template = get_template(resource_type=ArmConstants.WORKSPACE_BASE)
-        self.param = get_template(resource_type=ArmConstants.WORKSPACE_PARAM)
-        self._set_val(self.param["workspaceName"], workspace.name)
-        if not workspace.display_name:
-            self._set_val(self.param["friendlyName"], workspace.name)
-        else:
-            self._set_val(self.param["friendlyName"], workspace.display_name)
-
-        if not workspace.description:
-            self._set_val(self.param["description"], workspace.name)
-        else:
-            self._set_val(self.param["description"], workspace.description)
-        self._set_val(self.param["location"], workspace.location)
-
-        resource_group_for_new_resources = workspace.resource_group or self._resource_group_name
-        self._set_val(self.param["resourceGroupName"], resource_group_for_new_resources)
-
-        if workspace.key_vault:
-            resource_name, group_name = get_resource_and_group_name(workspace.key_vault)
-            self._set_val(self.param["keyVaultName"], resource_name)
-            self._set_val(self.param["keyVaultOption"], "existing")
-            self._set_val(self.param["keyVaultResourceGroupName"], group_name)
-        else:
-            self._generate_key_vault(workspace.name)
-            self._set_val(self.param["keyVaultName"], self.keyVault)
-            self._set_val(self.param["keyVaultResourceGroupName"], resource_group_for_new_resources)
-
-        if workspace.storage_account:
-            resource_name, group_name = get_resource_and_group_name(workspace.storage_account)
-            self._set_val(self.param["storageAccountName"], resource_name)
-            self._set_val(self.param["storageAccountOption"], "existing")
-            self._set_val(self.param["storageAccountResourceGroupName"], group_name)
-        else:
-            self._generate_storage(workspace.name)
-            self._set_val(self.param["storageAccountName"], self.storage)
-            self._set_val(self.param["storageAccountResourceGroupName"], resource_group_for_new_resources)
-
-        if workspace.application_insights:
-            resource_name, group_name = get_resource_and_group_name(workspace.application_insights)
-            self._set_val(self.param["applicationInsightsName"], resource_name)
-            self._set_val(self.param["applicationInsightsOption"], "existing")
-            self._set_val(
-                self.param["applicationInsightsResourceGroupName"],
-                group_name,
-            )
-        else:
-            self._generate_appInsights(workspace.name)
-            self._set_val(self.param["applicationInsightsName"], self.appInsights)
-            self._set_val(self.param["applicationInsightsResourceGroupName"], resource_group_for_new_resources)
-
-        if workspace.container_registry:
-            resource_name, group_name = get_resource_and_group_name(workspace.container_registry)
-            self._set_val(self.param["containerRegistryName"], resource_name)
-            self._set_val(self.param["containerRegistryOption"], "existing")
-            self._set_val(self.param["containerRegistryResourceGroupName"], group_name)
-
-        if workspace.customer_managed_key:
-            self._set_val(self.param["cmk_keyvault"], workspace.customer_managed_key.key_vault)
-            self._set_val(self.param["resource_cmk_uri"], workspace.customer_managed_key.key_uri)
-            self._set_val(self.param["encryption_status"], WorkspaceResourceConstants.ENCRYPTION_STATUS_ENABLED)
-            self._set_val(self.param["encryption_cosmosdb_resourceid"], workspace.customer_managed_key.cosmosdb_id)
-            self._set_val(self.param["encryption_storage_resourceid"], workspace.customer_managed_key.storage_id)
-            self._set_val(self.param["encryption_search_resourceid"], workspace.customer_managed_key.search_id)
-
-        if workspace.hbi_workspace:
-            self._set_val(self.param["confidential_data"], "true")
-
-        if workspace.public_network_access:
-            self._set_val(self.param["publicNetworkAccess"], workspace.public_network_access)
-
-        if workspace.image_build_compute:
-            self._set_val(self.param["imageBuildCompute"], workspace.image_build_compute)
-
-        if workspace.tags:
-            for key, val in workspace.tags.items():
-                self.param["tagValues"]["value"][key] = val
-
-        if workspace.softdelete_enable:
-            self._set_val(self.param["soft_delete_enabled"], "true")
-
-        if workspace.allow_recover_softdeleted_workspace:
-            self._set_val(self.param["allow_recover_softdeleted_workspace"], "true")
-
-        self.resources_being_deployed[workspace.name] = (ArmConstants.WORKSPACE, None)
-
-    def _set_val(self, key: str, val: str) -> None:
-        key["value"] = val
-
-    def _generate_key_vault(self, name: str) -> None:
-        # Vault name must only contain alphanumeric characters and dashes and cannot start with a number.
-        # Vault name must be between 3-24 alphanumeric characters.
-        # The name must begin with a letter, end with a letter or digit, and not contain consecutive hyphens.
-        self.keyVault = get_name_for_dependent_resource(name, "keyvault")
-        self.resources_being_deployed[self.keyVault] = (ArmConstants.KEY_VAULT, None)
-
-    def _generate_storage(self, name: str) -> None:
-        self.storage = get_name_for_dependent_resource(name, "storage")
-        self.resources_being_deployed[self.storage] = (ArmConstants.STORAGE, None)
-
-    def _generate_appInsights(self, name: str) -> None:
-        # Application name only allows alphanumeric characters, periods, underscores,
-        # hyphens and parenthesis and cannot end in a period
-        self.appInsights = get_name_for_dependent_resource(name, "insights")
-        self.resources_being_deployed[self.appInsights] = (ArmConstants.APP_INSIGHTS, None)
-
-    def _check_workspace_name(self, name) -> str:
-        workspace_name = name or self._default_workspace_name
-        if not workspace_name:
-            msg = "Please provide a workspace name or use a MLClient with a workspace name set."
-            raise ValidationException(
-                message=msg,
-                target=ErrorTarget.WORKSPACE,
-                no_personal_data_message=msg,
-                error_category=ErrorCategory.USER_ERROR,
-            )
-        else:
-            return workspace_name
+            return result

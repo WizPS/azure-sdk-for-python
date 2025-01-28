@@ -9,7 +9,13 @@ import functools
 from typing import Any, Callable, Dict, Generic, Optional, TypeVar
 import warnings
 
-from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import (
+    ClientAuthenticationError,
+    HttpResponseError,
+    ResourceExistsError,
+    ResourceNotFoundError,
+    map_error,
+)
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import AsyncHttpResponse
 from azure.core.rest import HttpRequest
@@ -19,8 +25,10 @@ from azure.mgmt.core.exceptions import ARMErrorFormat
 from ... import models as _models
 from ..._vendor import _convert_request
 from ...operations._temporary_data_references_operations import build_create_or_get_temporary_data_reference_request
-T = TypeVar('T')
+
+T = TypeVar("T")
 ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
+
 
 class TemporaryDataReferencesOperations:
     """TemporaryDataReferencesOperations async operations.
@@ -62,7 +70,7 @@ class TemporaryDataReferencesOperations:
         :type version: str
         :param resource_group_name: The name of the resource group. The name is case insensitive.
         :type resource_group_name: str
-        :param registry_name:
+        :param registry_name: Name of Azure Machine Learning registry.
         :type registry_name: str
         :param body:
         :type body: ~azure.mgmt.machinelearningservices.models.TemporaryDataReferenceRequestDto
@@ -74,16 +82,14 @@ class TemporaryDataReferencesOperations:
         :rtype: ~azure.mgmt.machinelearningservices.models.TemporaryDataReferenceResponseDto
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.TemporaryDataReferenceResponseDto"]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.TemporaryDataReferenceResponseDto"]
+        error_map = {401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError}
+        error_map.update(kwargs.pop("error_map", {}))
 
-        api_version = kwargs.pop('api_version', "2021-10-01-dataplanepreview")  # type: str
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+        api_version = kwargs.pop("api_version", "2021-10-01-dataplanepreview")  # type: str
+        content_type = kwargs.pop("content_type", "application/json")  # type: Optional[str]
 
-        _json = self._serialize.body(body, 'TemporaryDataReferenceRequestDto')
+        _json = self._serialize.body(body, "TemporaryDataReferenceRequestDto")
 
         request = build_create_or_get_temporary_data_reference_request(
             name=name,
@@ -94,7 +100,7 @@ class TemporaryDataReferencesOperations:
             api_version=api_version,
             content_type=content_type,
             json=_json,
-            template_url=self.create_or_get_temporary_data_reference.metadata['url'],
+            template_url=self.create_or_get_temporary_data_reference.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
@@ -107,12 +113,11 @@ class TemporaryDataReferencesOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error, error_format=ARMErrorFormat)
 
-        deserialized = self._deserialize('TemporaryDataReferenceResponseDto', pipeline_response)
+        deserialized = self._deserialize("TemporaryDataReferenceResponseDto", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    create_or_get_temporary_data_reference.metadata = {'url': '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/tempdatarefs/{name}/versions/{version}'}  # type: ignore
-
+    create_or_get_temporary_data_reference.metadata = {"url": "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/registries/{registryName}/tempdatarefs/{name}/versions/{version}"}  # type: ignore

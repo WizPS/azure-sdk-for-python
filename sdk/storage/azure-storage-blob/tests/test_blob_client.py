@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 
 import pytest
 from azure.core.credentials import AzureSasCredential
-from azure.core.exceptions import AzureError
 from azure.storage.blob import (
     AccountSasPermissions,
     BlobClient,
@@ -19,6 +18,7 @@ from azure.storage.blob import (
     ResourceTypes,
     VERSION,
 )
+from azure.storage.blob._shared.base_client import create_configuration
 
 from devtools_testutils import recorded_by_proxy
 from devtools_testutils.storage import StorageRecordedTestCase
@@ -157,7 +157,7 @@ class TestStorageClient(StorageRecordedTestCase):
     def test_create_service_with_token(self, **kwargs):
         storage_account_name = kwargs.pop("storage_account_name")
 
-        token_credential = self.generate_oauth_token()
+        token_credential = self.get_credential(BlobServiceClient)
         for service_type in SERVICES:
             # Act
             service = service_type(
@@ -173,7 +173,7 @@ class TestStorageClient(StorageRecordedTestCase):
     def test_create_service_with_token_and_http(self, **kwargs):
         storage_account_name = kwargs.pop("storage_account_name")
 
-        token_credential = self.generate_oauth_token()
+        token_credential = self.get_credential(BlobServiceClient)
         for service_type in SERVICES:
             # Act
             with pytest.raises(ValueError):
@@ -517,6 +517,13 @@ class TestStorageClient(StorageRecordedTestCase):
         assert service.primary_hostname == 'local-machine:11002/custom/account/path'
         assert service.url == 'http://local-machine:11002/custom/account/path/foo'
 
+        service = ContainerClient.from_container_url("http://local-machine:11002/custom/account/path/foo/?query=value")
+        assert service.account_name == None
+        assert service.container_name == "foo"
+        assert service.credential == None
+        assert service.primary_hostname == 'local-machine:11002/custom/account/path'
+        assert service.url == 'http://local-machine:11002/custom/account/path/foo'
+
         service = BlobClient(account_url=custom_account_url, container_name="foo", blob_name="bar", snapshot="baz")
         assert service.account_name == None
         assert service.container_name == "foo"
@@ -710,5 +717,18 @@ class TestStorageClient(StorageRecordedTestCase):
             service = client(
                 self.account_url(storage_account_name, "blob"), credential=storage_account_key, container_name='foo', blob_name='bar')
             service.close()
+
+    @BlobPreparer()
+    def test_create_configuration_legacy(self, **kwargs):
+        # Arrange
+        sdk_name = 'Blob-test'
+
+        # Act
+        config = create_configuration(storage_sdk=sdk_name)
+
+        # Assert
+        assert config is not None
+        assert config.max_block_size == 4 * 1024 * 1024
+        assert sdk_name in config.user_agent_policy.user_agent
 
 # ------------------------------------------------------------------------------

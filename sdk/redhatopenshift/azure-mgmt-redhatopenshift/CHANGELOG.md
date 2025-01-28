@@ -1,5 +1,50 @@
 # Release History
 
+## 2.0.0 (2024-10-30)
+
+### Breaking Changes
+
+  - This package now only targets the latest Api-Version available on Azure and removes APIs of other Api-Version. After this change, the package can have much smaller size. If your application requires a specific and non-latest Api-Version, it's recommended to pin this package to the previous released version; If your application always only use latest Api-Version, please ignore this change.
+    
+## 1.5.0 (2024-07-22)
+
+### Features Added
+
+  - Model NetworkProfile has a new parameter load_balancer_profile
+
+## 1.4.0 (2023-10-23)
+
+### Features Added
+
+  - Model NetworkProfile has a new parameter preconfigured_nsg
+  - Model OpenShiftCluster has a new parameter worker_profiles_status
+  - Model OpenShiftClusterUpdate has a new parameter worker_profiles_status
+
+## 1.3.0 (2023-08-18)
+
+### Features Added
+
+  - Model NetworkProfile has a new parameter outbound_type
+
+## 1.3.0b1 (2023-02-16)
+
+### Other Changes
+
+  - Added generated samples in github repo
+  - Drop support for python<3.7.0
+
+## 1.2.0 (2023-01-17)
+
+### Features Added
+
+  - Added operation group MachinePoolsOperations
+  - Added operation group OpenShiftVersionsOperations
+  - Added operation group SecretsOperations
+  - Added operation group SyncIdentityProvidersOperations
+  - Added operation group SyncSetsOperations
+  - Model Resource has a new parameter system_data
+  - Model TrackedResource has a new parameter system_data
+
 ## 1.1.0 (2022-05-10)
 
 **Features**

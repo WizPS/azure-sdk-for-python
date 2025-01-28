@@ -3,20 +3,16 @@
 # ---------------------------------------------------------
 
 import logging
+from typing import Any, Dict
 
-from typing import Dict
-
-from azure.ai.ml._schema.job import BaseJobSchema
 from azure.ai.ml._restclient.runhistory.models import Run
-from azure.ai.ml._restclient.v2022_02_01_preview.models import SystemData
-from azure.ai.ml.constants import (
-    BASE_PATH_CONTEXT_KEY,
-    TYPE,
-    JobType,
-)
-from .job import Job
+from azure.ai.ml._schema.job import BaseJobSchema
+from azure.ai.ml.constants import JobType
+from azure.ai.ml.constants._common import BASE_PATH_CONTEXT_KEY, TYPE
+from azure.ai.ml.entities._system_data import SystemData
 from azure.ai.ml.entities._util import load_from_dict
-from .parameterized_command import ParameterizedCommand
+
+from .job import Job
 
 module_logger = logging.getLogger(__name__)
 
@@ -39,7 +35,8 @@ class _BaseJob(Job):
     :type tags: dict[str, str]
     :param properties: The asset property dictionary.
     :type properties: dict[str, str]
-    :param experiment_name:  Name of the experiment the job will be created under, if None is provided, default will be set to current directory name.
+    :param experiment_name:  Name of the experiment the job will be created under,
+        if None is provided, default will be set to current directory name.
     :type experiment_name: str
     :param services: Information on services associated with the job, readonly.
     :type services: dict[str, JobService]
@@ -49,16 +46,17 @@ class _BaseJob(Job):
     :type kwargs: dict
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         kwargs[TYPE] = JobType.BASE
 
         super().__init__(**kwargs)
 
     def _to_dict(self) -> Dict:
-        return BaseJobSchema(context={BASE_PATH_CONTEXT_KEY: "./"}).dump(self)
+        res: dict = BaseJobSchema(context={BASE_PATH_CONTEXT_KEY: "./"}).dump(self)
+        return res
 
     @classmethod
-    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str, **kwargs) -> "_BaseJob":
+    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str, **kwargs: Any) -> "_BaseJob":
         loaded_data = load_from_dict(BaseJobSchema, data, context, additional_message, **kwargs)
         return _BaseJob(**loaded_data)
 

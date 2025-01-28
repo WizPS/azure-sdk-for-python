@@ -7,20 +7,36 @@ import lxml.html
 import subprocess as sp
 from typing import List, Dict
 from github import Github
+from functools import wraps
 from github.Repository import Repository
 import time
 from packaging.version import parse
 from pathlib import Path
-
-from util import add_certificate
 
 MAIN_REPO_SWAGGER = 'https://github.com/Azure/azure-rest-api-specs/tree/main'
 PR_URL = 'https://github.com/Azure/azure-rest-api-specs/pull/'
 FAILED_RESULT = []
 SKIP_TEXT = '-, -, -, -\n'
 
+
+def return_origin_path(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        current_path = os.getcwd()
+        result = func(*args, **kwargs)
+        os.chdir(current_path)
+        return result
+
+    return wrapper
+
+
 def my_print(cmd):
     print('== ' + cmd + ' ==\n')
+
+
+def print_exec(cmd: str):
+    my_print(cmd)
+    sp.call(cmd, shell=True)
 
 
 def print_check(cmd, path=''):
@@ -126,21 +142,21 @@ class PyPIClient:
             return '{sdk_folder}/{package_name},{pypi_link},{track1_latest_version},{track1_latest_release_date},' \
                    '{track1_ga_version},{track2_latest_version},{track2_latest_release_date},{track2_ga_version},' \
                    '{cli_version},{track_config},{bot},{readme_link},{multiapi},{whl_size},'.format(
-                        sdk_folder=sdk_folder.split('/')[0],
-                        package_name=self._package_name,
-                        pypi_link=self.pypi_link,
-                        track1_latest_version=self.track1_latest_version,
-                        track1_latest_release_date=self.version_date_dict[self.track1_latest_version],
-                        track1_ga_version=self.track1_ga_version,
-                        track2_latest_version=self.track2_latest_version,
-                        track2_latest_release_date=self.version_date_dict[self.track2_latest_version],
-                        track2_ga_version=self.track2_ga_version,
-                        cli_version=self.cli_version,
-                        track_config=self.track_config,
-                        bot=self.bot_warning,
-                        readme_link=self.rm_link,
-                        multiapi=self.multi_api,
-                        whl_size=self.output_package_size())
+                sdk_folder=sdk_folder.split('/')[0],
+                package_name=self._package_name,
+                pypi_link=self.pypi_link,
+                track1_latest_version=self.track1_latest_version,
+                track1_latest_release_date=self.version_date_dict[self.track1_latest_version],
+                track1_ga_version=self.track1_ga_version,
+                track2_latest_version=self.track2_latest_version,
+                track2_latest_release_date=self.version_date_dict[self.track2_latest_version],
+                track2_ga_version=self.track2_ga_version,
+                cli_version=self.cli_version,
+                track_config=self.track_config,
+                bot=self.bot_warning,
+                readme_link=self.rm_link,
+                multiapi=self.multi_api,
+                whl_size=self.output_package_size())
         else:
             self.pypi_link = 'NA'
         return ''
@@ -155,7 +171,7 @@ class PyPIClient:
                 self.track2_ga_version = version
                 break
 
-    def handle_cli_version(self, track1_versions: List[str], track2_versions: List[str]) ->None:
+    def handle_cli_version(self, track1_versions: List[str], track2_versions: List[str]) -> None:
         if self.cli_version == 'NA':
             return
         if self.cli_version in track1_versions:
@@ -211,7 +227,6 @@ class PyPIClient:
 
 def sdk_info_from_pypi(sdk_info: List[Dict[str, str]], cli_dependency):
     all_sdk_status = []
-    add_certificate(str(Path('../venv-sdk/lib/python3.8/site-packages/certifi/cacert.pem')))
     for package in sdk_info:
         sdk_name = package['package_name']
         if sdk_name in cli_dependency.keys():
@@ -226,72 +241,11 @@ def sdk_info_from_pypi(sdk_info: List[Dict[str, str]], cli_dependency):
                               readme_link=readme_link, rm_link=rm_link, cli_version=cli_version, multi_api=multi_api)
         sdk_folder = package['sdk_folder']
         text_to_write = pypi_ins.write_to_list(sdk_folder)
-        service_name = package['service_name']
         if pypi_ins.pypi_link != 'NA':
-            test_result = SKIP_TEXT
-            try:
-                test_result = run_playback_test(service_name, sdk_folder)
-            except:
-                print(f'[Error] fail to play back test recordings: {sdk_name}')
-            text_to_write += test_result
-            all_sdk_status.append(text_to_write)
+            all_sdk_status.append(text_to_write + SKIP_TEXT)
 
     my_print(f'total pypi package kinds: {len(all_sdk_status)}')
     return all_sdk_status
-
-
-def get_test_result(txt_path):
-    with open(txt_path, 'r+') as f:
-        coverage = ' - '
-        for line in f.readlines():
-            if 'TOTAL' in line:
-                coverage = line.split()[3]
-            if '=====' in line and ('passed' in line or 'failed' in line or 'skipped' in line):
-                # print(line)
-                passed, failed, skipped = 0, 0, 0
-                if 'passed' in line:
-                    passed = re.findall('(\d{1,2}) passed', line)[0]
-                if 'failed' in line:
-                    failed = re.findall('(\d{1,2}) failed', line)[0]
-                if 'skipped' in line:
-                    skipped = re.findall('(\d{1,2}) skipped', line)[0]
-                # print(f'{passed} {failed} {skipped}')
-
-    return f'{coverage}, {passed}, {failed}, {skipped}\n'
-
-
-def run_playback_test(service_name: str, sdk_folder: str):
-    if os.getenv('SKIP_COVERAGE') in ('true', 'yes'):
-        return SKIP_TEXT
-
-    # eg: coverage_path='$(pwd)/sdk-repo/sdk/containerregistry/azure-mgmt-containerregistry/azure/mgmt/containerregistry/'
-    coverage_path = ''.join([os.getenv('SDK_REPO'), '/sdk/', sdk_folder])
-    service_path = coverage_path.split('/azure/mgmt')[0]
-    test_path = service_path + '/tests'
-    if os.path.exists(test_path):
-        print_check('pip install -r dev_requirements.txt', path=service_path)
-        print_check('pip install -e .', path=service_path)
-        # print_check('python setup.py install', path=service_path)
-        if os.path.exists(coverage_path+'/operations') and os.path.exists(coverage_path+'/models'):
-            operations_path = coverage_path+'/operations'
-            models_path = coverage_path+'/models'
-            try:
-                start_time = int(time.time())
-                print_check(f'pytest -s tests --cov={operations_path} --cov={models_path} >result.txt', path=service_path)
-                cost_time = int(time.time()) - start_time
-                my_print(f'{service_name} play_back cost {cost_time} seconds({cost_time // 60} minutes)')
-            except Exception as e:
-                print(f'{service_name} test ERROR')
-                return '-, 0, 0, 0\n'
-        else:
-            try:
-                print_check(f'pytest -s tests >result.txt', path=service_path)
-            except Exception as e:
-                return '-, 0, 0, 0\n'
-        if os.path.exists(service_path+'/result.txt'):
-            return get_test_result(service_path+'/result.txt')
-
-    return SKIP_TEXT
 
 
 def write_to_csv(sdk_status_list, csv_name):

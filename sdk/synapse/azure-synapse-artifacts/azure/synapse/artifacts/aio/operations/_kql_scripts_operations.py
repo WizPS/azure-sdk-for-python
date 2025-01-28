@@ -1,4 +1,4 @@
-# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines,too-many-statements
 # coding=utf-8
 # --------------------------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
@@ -9,7 +9,14 @@
 from typing import Any, AsyncIterable, Callable, Dict, Optional, TypeVar
 
 from azure.core.async_paging import AsyncItemPaged, AsyncList
-from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import (
+    ClientAuthenticationError,
+    HttpResponseError,
+    ResourceExistsError,
+    ResourceNotFoundError,
+    ResourceNotModifiedError,
+    map_error,
+)
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import AsyncHttpResponse
 from azure.core.rest import HttpRequest
@@ -19,8 +26,10 @@ from azure.core.utils import case_insensitive_dict
 from ... import models as _models
 from ..._vendor import _convert_request
 from ...operations._kql_scripts_operations import build_get_all_request
-T = TypeVar('T')
+
+T = TypeVar("T")
 ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
+
 
 class KqlScriptsOperations:
     """
@@ -41,83 +50,70 @@ class KqlScriptsOperations:
         self._serialize = input_args.pop(0) if input_args else kwargs.pop("serializer")
         self._deserialize = input_args.pop(0) if input_args else kwargs.pop("deserializer")
 
-
     @distributed_trace
-    def get_all(
-        self,
-        **kwargs: Any
-    ) -> AsyncIterable[_models.KqlScriptsResourceCollectionResponse]:
+    def get_all(self, **kwargs: Any) -> AsyncIterable["_models.KqlScriptResource"]:
         """Get all KQL scripts.
 
-        :keyword api_version: Api Version. Default value is "2021-11-01-preview". Note that overriding
-         this default value may result in unsupported behavior.
-        :paramtype api_version: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: An iterator like instance of either KqlScriptsResourceCollectionResponse or the result
-         of cls(response)
+        :return: An iterator like instance of either KqlScriptResource or the result of cls(response)
         :rtype:
-         ~azure.core.async_paging.AsyncItemPaged[~azure.synapse.artifacts.models.KqlScriptsResourceCollectionResponse]
-        :raises: ~azure.core.exceptions.HttpResponseError
+         ~azure.core.async_paging.AsyncItemPaged[~azure.synapse.artifacts.models.KqlScriptResource]
+        :raises ~azure.core.exceptions.HttpResponseError:
         """
         _headers = kwargs.pop("headers", {}) or {}
         _params = case_insensitive_dict(kwargs.pop("params", {}) or {})
 
-        api_version = kwargs.pop('api_version', _params.pop('api-version', "2021-11-01-preview"))  # type: str
-        cls = kwargs.pop('cls', None)  # type: ClsType[_models.KqlScriptsResourceCollectionResponse]
+        api_version: str = kwargs.pop("api_version", _params.pop("api-version", "2021-11-01-preview"))
+        cls: ClsType[_models.KqlScriptsResourceCollectionResponse] = kwargs.pop("cls", None)
 
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
+            304: ResourceNotModifiedError,
         }
-        error_map.update(kwargs.pop('error_map', {}) or {})
+        error_map.update(kwargs.pop("error_map", {}) or {})
+
         def prepare_request(next_link=None):
             if not next_link:
-                
-                request = build_get_all_request(
+
+                _request = build_get_all_request(
                     api_version=api_version,
-                    template_url=self.get_all.metadata['url'],
                     headers=_headers,
                     params=_params,
                 )
-                request = _convert_request(request)
+                _request = _convert_request(_request)
                 path_format_arguments = {
-                    "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+                    "endpoint": self._serialize.url(
+                        "self._config.endpoint", self._config.endpoint, "str", skip_quote=True
+                    ),
                 }
-                request.url = self._client.format_url(request.url, **path_format_arguments)  # type: ignore
+                _request.url = self._client.format_url(_request.url, **path_format_arguments)
 
             else:
-                
-                request = build_get_all_request(
-                    api_version=api_version,
-                    template_url=next_link,
-                    headers=_headers,
-                    params=_params,
-                )
-                request = _convert_request(request)
+                _request = HttpRequest("GET", next_link)
+                _request = _convert_request(_request)
                 path_format_arguments = {
-                    "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
+                    "endpoint": self._serialize.url(
+                        "self._config.endpoint", self._config.endpoint, "str", skip_quote=True
+                    ),
                 }
-                request.url = self._client.format_url(request.url, **path_format_arguments)  # type: ignore
-
-                path_format_arguments = {
-                    "endpoint": self._serialize.url("self._config.endpoint", self._config.endpoint, 'str', skip_quote=True),
-                }
-                request.method = "GET"
-            return request
+                _request.url = self._client.format_url(_request.url, **path_format_arguments)
+                _request.method = "GET"
+            return _request
 
         async def extract_data(pipeline_response):
             deserialized = self._deserialize("KqlScriptsResourceCollectionResponse", pipeline_response)
             list_of_elem = deserialized.value
             if cls:
-                list_of_elem = cls(list_of_elem)
+                list_of_elem = cls(list_of_elem)  # type: ignore
             return deserialized.next_link or None, AsyncList(list_of_elem)
 
         async def get_next(next_link=None):
-            request = prepare_request(next_link)
+            _request = prepare_request(next_link)
 
-            pipeline_response = await self._client._pipeline.run(  # pylint: disable=protected-access
-                request,
-                stream=False,
-                **kwargs
+            _stream = False
+            pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
+                _request, stream=_stream, **kwargs
             )
             response = pipeline_response.http_response
 
@@ -128,8 +124,4 @@ class KqlScriptsOperations:
 
             return pipeline_response
 
-
-        return AsyncItemPaged(
-            get_next, extract_data
-        )
-    get_all.metadata = {'url': "/kqlScripts"}  # type: ignore
+        return AsyncItemPaged(get_next, extract_data)

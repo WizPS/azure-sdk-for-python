@@ -1,42 +1,48 @@
 import json
-import yaml
-from azure.ai.ml.constants import InputOutputModes, BASE_PATH_CONTEXT_KEY, AssetTypes
-from azure.ai.ml.entities import Job, CommandJob
-from azure.ai.ml.entities._inputs_outputs import Input
 from pathlib import Path
 from typing import Any
-from azure.ai.ml._restclient.v2022_02_01_preview.models import (
-    InputDeliveryMode,
-    JobInputType,
-    JobOutputType,
-    OutputDeliveryMode,
-    UriFolderJobOutput as RestUriFolderJobOutput,
-    AmlToken,
-    UserIdentity,
-    ManagedIdentity,
-)
+
 import pytest
+import yaml
+
+from azure.ai.ml import load_job
+from azure.ai.ml._restclient.v2023_04_01_preview.models import AmlToken as RestAmlToken
+from azure.ai.ml._restclient.v2023_04_01_preview.models import InputDeliveryMode, JobInputType, JobOutputType
+from azure.ai.ml._restclient.v2023_04_01_preview.models import ManagedIdentity as RestManagedIdentity
+from azure.ai.ml._restclient.v2023_04_01_preview.models import OutputDeliveryMode
+from azure.ai.ml._restclient.v2023_04_01_preview.models import UriFolderJobOutput as RestUriFolderJobOutput
+from azure.ai.ml._restclient.v2023_04_01_preview.models import UserIdentity as RestUserIdentity
+from azure.ai.ml._schema import SweepJobSchema
+from azure.ai.ml.constants._common import BASE_PATH_CONTEXT_KEY, AssetTypes, InputOutputModes
+from azure.ai.ml.entities import (
+    AmlTokenConfiguration,
+    CommandJob,
+    Job,
+    ManagedIdentityConfiguration,
+    UserIdentityConfiguration,
+)
+from azure.ai.ml.entities._job.job_resource_configuration import JobResourceConfiguration
+from azure.ai.ml.entities._inputs_outputs import Input
 from azure.ai.ml.entities._job.sweep.search_space import SweepDistribution
+from azure.ai.ml.entities._job.to_rest_functions import to_rest_job_object
 from azure.ai.ml.sweep import (
     Choice,
     LogNormal,
+    LogUniform,
     Normal,
     QLogNormal,
-    QNormal,
-    Randint,
-    Uniform,
-    QUniform,
-    LogUniform,
     QLogUniform,
-    SweepJob,
+    QNormal,
+    QUniform,
+    Randint,
     SamplingAlgorithm,
+    SweepJob,
+    Uniform,
 )
-from azure.ai.ml._schema import SweepJobSchema
-from azure.ai.ml import load_job
-from azure.ai.ml.entities._job.to_rest_functions import to_rest_job_object
 
 
 @pytest.mark.unittest
+@pytest.mark.training_experiences_test
 class TestSweepJobSchema:
     @pytest.mark.parametrize(
         "search_space, expected",
@@ -59,7 +65,7 @@ class TestSweepJobSchema:
             command="python train.py --lr 0.01",
             inputs={"input1": Input(path="testdata:1")},
             compute="local",
-            environment="AzureML-sklearn-0.24-ubuntu18.04-py37-cpu:1",
+            environment="AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:33",
         )
 
         sweep = SweepJob(sampling_algorithm="random", trial=command_job, search_space={"ss": search_space})
@@ -88,7 +94,7 @@ class TestSweepJobSchema:
             command="python train.py --ss {search_space.ss}",
             inputs={"input1": Input(path="testdata:1")},
             compute="local",
-            environment="AzureML-sklearn-0.24-ubuntu18.04-py37-cpu:1",
+            environment="AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:33",
         )
         sweep = SweepJob(sampling_algorithm="random", trial=command_job, search_space={"ss": Choice([1.0, 2.0, 3.0])})
 
@@ -96,6 +102,71 @@ class TestSweepJobSchema:
         rest.properties.search_space = {"ss": rest_search_space}
         sweep: SweepJob = Job._from_rest_object(rest)
         assert sweep.search_space == {"ss": expected}
+
+    @pytest.mark.parametrize(
+        "expected_resources, rest_resources",
+        [
+            (
+                JobResourceConfiguration(instance_type="d2", instance_count=2),
+                {"instance_type": "d2", "instance_count": 2},
+            ),
+            (JobResourceConfiguration(instance_type="d2"), {"instance_type": "d2"}),
+            (JobResourceConfiguration(instance_count=2), {"instance_count": 2}),
+        ],
+    )
+    def test_resources_from_rest(self, expected_resources: JobResourceConfiguration, rest_resources):
+        command_job = CommandJob(
+            code="./src",
+            command="python train.py --ss {search_space.ss}",
+            inputs={"input1": Input(path="testdata:1")},
+            compute="local",
+            environment="AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:33",
+        )
+        sweep = SweepJob(
+            sampling_algorithm="random",
+            trial=command_job,
+            search_space={"ss": Choice([1.0, 2.0, 3.0])},
+            resources=rest_resources,
+        )
+
+        rest = sweep._to_rest_object()
+        rest.properties.resources = rest_resources
+        sweep: SweepJob = Job._from_rest_object(rest)
+        assert sweep.resources == expected_resources
+
+    @pytest.mark.parametrize(
+        "rest_resources, expected_resources",
+        [
+            (
+                JobResourceConfiguration(instance_type="d2", instance_count=2),
+                {"instance_type": "d2", "instance_count": 2},
+            ),
+            (JobResourceConfiguration(instance_type="d2"), {"instance_type": "d2"}),
+            (JobResourceConfiguration(instance_count=2), {"instance_count": 2}),
+        ],
+    )
+    def test_resources_to_rest(self, rest_resources: JobResourceConfiguration, expected_resources):
+        command_job = CommandJob(
+            code="./src",
+            command="python train.py --lr 0.01",
+            inputs={"input1": Input(path="testdata:1")},
+            compute="local",
+            environment="AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:33",
+        )
+
+        sweep = SweepJob(
+            sampling_algorithm="random",
+            trial=command_job,
+            search_space={"ss": Choice([1.0, 2.0, 3.0])},
+            resources=rest_resources,
+        )
+        rest = sweep._to_rest_object()
+
+        if rest.properties.resources:
+            if "instance_count" in expected_resources:
+                assert rest.properties.resources.instance_count == expected_resources["instance_count"]
+            if "instance_type" in expected_resources:
+                assert rest.properties.resources.instance_type == expected_resources["instance_type"]
 
     def test_sweep_with_ints(self):
         expected_rest = ["quniform", [1, 100, 1]]
@@ -106,7 +177,7 @@ class TestSweepJobSchema:
             command="python train.py --ss {search_space.ss}",
             inputs={"input1": Input(path="testdata:1")},
             compute="local",
-            environment="AzureML-sklearn-0.24-ubuntu18.04-py37-cpu:1",
+            environment="AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:33",
         )
         sweep = SweepJob(
             sampling_algorithm="random",
@@ -130,7 +201,7 @@ class TestSweepJobSchema:
             command="python train.py --ss {search_space.ss}",
             inputs={"input1": Input(path="testdata:1")},
             compute="local",
-            environment="AzureML-sklearn-0.24-ubuntu18.04-py37-cpu:1",
+            environment="AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:33",
         )
         sweep = SweepJob(
             sampling_algorithm="random",
@@ -154,7 +225,7 @@ class TestSweepJobSchema:
             command="python train.py --ss {search_space.ss}",
             inputs={"input1": Input(path="testdata:1")},
             compute="local",
-            environment="AzureML-sklearn-0.24-ubuntu18.04-py37-cpu:1",
+            environment="AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:33",
         )
         sweep = SweepJob(
             sampling_algorithm="random",
@@ -172,10 +243,10 @@ class TestSweepJobSchema:
         rest_representation = to_rest_job_object(original_entity)
         reconstructed_entity = Job._from_rest_object(rest_representation)
 
-        assert original_entity.inputs["test_dataset"].mode == InputOutputModes.RO_MOUNT
+        assert original_entity.inputs["test_dataset"].mode is None
         assert rest_representation.properties.inputs["test_dataset"].job_input_type == JobInputType.URI_FOLDER
-        assert rest_representation.properties.inputs["test_dataset"].mode == InputDeliveryMode.READ_ONLY_MOUNT
-        assert reconstructed_entity.inputs["test_dataset"].mode == InputOutputModes.RO_MOUNT
+        assert rest_representation.properties.inputs["test_dataset"].mode is None
+        assert reconstructed_entity.inputs["test_dataset"].mode is None
 
         assert original_entity.inputs["test_url"].mode == InputOutputModes.RO_MOUNT
         assert original_entity.inputs["test_url"].type == AssetTypes.URI_FILE
@@ -206,7 +277,7 @@ class TestSweepJobSchema:
 
         assert original_entity.outputs["test1"] is None
         assert rest_representation.properties.outputs["test1"].job_output_type == JobOutputType.URI_FOLDER
-        assert rest_representation.properties.outputs["test1"].mode == OutputDeliveryMode.READ_WRITE_MOUNT
+        assert rest_representation.properties.outputs["test1"].mode is None
 
         assert original_entity.outputs["test2"].mode == InputOutputModes.UPLOAD
         assert rest_representation.properties.outputs["test2"].job_output_type == JobOutputType.URI_FOLDER
@@ -226,7 +297,7 @@ class TestSweepJobSchema:
             command="python train.py --ss {search_space.ss}",
             inputs={"input1": Input(path="testdata:1")},
             compute="local",
-            environment="AzureML-sklearn-0.24-ubuntu18.04-py37-cpu:1",
+            environment="AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:33",
         )
         sweep = SweepJob(
             sampling_algorithm="random",
@@ -311,28 +382,43 @@ class TestSweepJobSchema:
         [
             (
                 "./tests/test_configs/sweep_job/object_sampling_algorithm/sweep_job_random_sampling_algorithm_object.yml",
-                "Random",
+                "random",
             ),
             (
                 "./tests/test_configs/sweep_job/object_sampling_algorithm/sweep_job_grid_sampling_algorithm_object.yml",
-                "Grid",
+                "grid",
             ),
             (
                 "./tests/test_configs/sweep_job/object_sampling_algorithm/sweep_job_bayesian_sampling_algorithm_object.yml",
-                "Bayesian",
+                "bayesian",
             ),
         ],
     )
     def test_sampling_algorithm_object_preservation(self, yaml_path: str, expected_sampling_algorithm: str):
         sweep_entity = load_job(Path(yaml_path))
         assert isinstance(sweep_entity.sampling_algorithm, SamplingAlgorithm)
-        assert sweep_entity.sampling_algorithm.sampling_algorithm_type == expected_sampling_algorithm
+        assert sweep_entity.sampling_algorithm.type == expected_sampling_algorithm
 
     @pytest.mark.parametrize(
         "yaml_path,property_name,expected_value",
         [
             ("./tests/test_configs/sweep_job/sampling_algorithm_properties/sweep_job_random_seed.yml", "seed", 999),
             ("./tests/test_configs/sweep_job/sampling_algorithm_properties/sweep_job_random_rule.yml", "rule", "sobol"),
+            (
+                "./tests/test_configs/sweep_job/sampling_algorithm_properties/logbase_values/sweep_job_random_logbase_e.yml",
+                "logbase",
+                "e",
+            ),
+            (
+                "./tests/test_configs/sweep_job/sampling_algorithm_properties/logbase_values/sweep_job_random_logbase_number.yml",
+                "logbase",
+                2,
+            ),
+            (
+                "./tests/test_configs/sweep_job/sampling_algorithm_properties/logbase_values/sweep_job_random_logbase_float.yml",
+                "logbase",
+                2.5,
+            ),
         ],
     )
     def test_sampling_algorithm_object_properties(self, yaml_path: str, property_name: str, expected_value: Any):
@@ -341,16 +427,20 @@ class TestSweepJobSchema:
         assert sweep_entity.sampling_algorithm.__dict__[property_name] == expected_value
 
     @pytest.mark.parametrize(
-        "identity",
-        [AmlToken(), UserIdentity(), ManagedIdentity()],
+        ("identity", "rest_identity"),
+        [
+            (AmlTokenConfiguration(), RestAmlToken()),
+            (UserIdentityConfiguration(), RestUserIdentity()),
+            (ManagedIdentityConfiguration(), RestManagedIdentity()),
+        ],
     )
-    def test_identity_to_rest(self, identity):
+    def test_identity_to_rest(self, identity, rest_identity):
         command_job = CommandJob(
             code="./src",
             command="python train.py --lr 0.01",
             inputs={"input1": Input(path="testdata:1")},
             compute="local",
-            environment="AzureML-sklearn-0.24-ubuntu18.04-py37-cpu:1",
+            environment="AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:33",
         )
 
         sweep = SweepJob(
@@ -361,4 +451,4 @@ class TestSweepJobSchema:
         )
         rest = sweep._to_rest_object()
 
-        assert rest.properties.identity == identity
+        assert rest.properties.identity == rest_identity
